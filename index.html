@@ -3,425 +3,686 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プロペラシャフト 慣性モーメント & 回転エネルギー計算 (全ギア比)</title>
+    <title>プロペラシャフト総合解析 Ver.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* カスタムスタイル */
         body {
-            font-family: 'Inter', sans-serif; /* フォント設定 */
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        .param-group {
+            background-color: white;
+            padding: 1rem; /* p-4 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-md */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+        .results-group {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+        }
+        .results-card {
+            background-color: #e0f2fe; /* bg-sky-100 */
+            padding: 0.75rem; /* p-3 */
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid #bae6fd; /* border-sky-200 */
+            margin-top: 0.5rem; /* mt-2 */
         }
         .slider-label {
-            min-width: 100px; /* ラベル幅の最小値を設定 */
+            min-width: 130px; /* ラベル幅調整 */
+            font-size: 0.875rem; /* text-sm */
         }
         .value-display {
-            min-width: 60px; /* 値表示の最小幅 */
+            min-width: 75px;
             text-align: right;
+            font-size: 0.875rem; /* text-sm */
+            color: #0369a1; /* text-sky-700 */
         }
-        /* スライダーのトラックとつまみのスタイル */
+        .fixed-value {
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* text-gray-800 */
+        }
         input[type=range] {
-            -webkit-appearance: none; /* デフォルトのスタイルを無効化 (Chrome, Safari, Edge) */
-            appearance: none;
-            width: 100%;
-            height: 8px;
-            background: #d3d3d3; /* トラックの背景色 */
-            outline: none;
-            opacity: 0.7;
-            -webkit-transition: .2s; /* アニメーション */
-            transition: opacity .2s;
-            border-radius: 4px; /* 角丸 */
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 8px;
+            background: #d1d5db; /* bg-gray-300 */
+            outline: none; opacity: 0.8;
+            transition: opacity .2s; border-radius: 4px;
         }
-
-        input[type=range]:hover {
-            opacity: 1; /* ホバー時に少し濃くする */
-        }
-
-        /* Chrome, Safari, Edge 用のつまみ */
+        input[type=range]:hover { opacity: 1; }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #0ea5e9; /* つまみの色 (sky-500) */
-            cursor: pointer;
-            border-radius: 50%; /* 円形 */
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px;
+            background: #0ea5e9; /* bg-sky-500 */
+            cursor: pointer; border-radius: 50%;
         }
-
-        /* Firefox 用のつまみ */
         input[type=range]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #0ea5e9; /* つまみの色 (sky-500) */
-            cursor: pointer;
-            border-radius: 50%; /* 円形 */
-            border: none; /* Firefoxのデフォルトボーダーを削除 */
+            width: 20px; height: 20px;
+            background: #0ea5e9; /* bg-sky-500 */
+            cursor: pointer; border-radius: 50%; border: none;
         }
-        /* 凡例のクリックを無効化するためのスタイル */
-        .legend-item-disabled {
-             pointer-events: none;
-             opacity: 0.5;
+        .status-ok { color: #059669; /* text-green-600 */ font-weight: bold; }
+        .status-warning { color: #d97706; /* text-yellow-600 */ font-weight: bold; }
+        .status-danger { color: #dc2626; /* text-red-600 */ font-weight: bold; }
+        .section-title {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* text-gray-800 */
+            border-bottom: 1px solid #e5e7eb; /* border-gray-200 */
+            padding-bottom: 0.5rem; /* pb-2 */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+        .result-item p { margin-bottom: 0.25rem; font-size: 0.875rem;}
+        .result-item strong { color: #1e40af; /* text-blue-800 */}
+        .chart-container {
+            height: 300px; /* グラフの高さ */
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background-color: #f9fafb; /* bg-gray-50 */
+            border-radius: 0.375rem;
+        }
+        /* Tab styling */
+        .tab-button {
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            border-radius: 0.375rem 0.375rem 0 0;
+            cursor: pointer;
+            background-color: #e5e7eb; /* bg-gray-200 */
+            color: #4b5563; /* text-gray-600 */
+            font-weight: 500; /* font-medium */
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-bottom: none;
+        }
+        .tab-button.active {
+            background-color: white;
+            color: #0ea5e9; /* text-sky-600 */
+            border-color: #d1d5db; /* border-gray-300 */
+            border-bottom: 1px solid white; /* Hide bottom border by matching background */
+            position: relative;
+            top: 1px; /* Make it overlap the param-group border */
         }
     </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-8 font-sans">
+<body class="p-4 md:p-8">
 
-    <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">プロペラシャフト 慣性モーメント & 回転運動エネルギー 計算・グラフ (全ギア比)</h1>
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">プロペラシャフト総合解析 Ver.3</h1>
 
-        <div class="mb-6">
-             <h2 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">パラメータ設定</h2>
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                 <div class="flex items-center space-x-3">
-                     <label for="diameter" class="slider-label text-sm font-medium text-gray-600">配管径 (D):</label>
-                     <input type="range" id="diameter" min="20" max="120" value="60" class="flex-grow">
-                     <span id="diameterValue" class="value-display text-sm font-medium text-sky-600">60 mm</span>
-                 </div>
-
-                 <div class="flex items-center space-x-3">
-                     <label for="length" class="slider-label text-sm font-medium text-gray-600">長さ (L):</label>
-                     <input type="range" id="length" min="500" max="2500" value="1500" step="10" class="flex-grow">
-                     <span id="lengthValue" class="value-display text-sm font-medium text-sky-600">1500 mm</span>
-                 </div>
-
-                 <div class="flex items-center space-x-3">
-                     <label for="thickness" class="slider-label text-sm font-medium text-gray-600">管厚 (t):</label>
-                     <input type="range" id="thickness" min="1" max="10" value="3" step="0.1" class="flex-grow">
-                     <span id="thicknessValue" class="value-display text-sm font-medium text-sky-600">3.0 mm</span>
-                 </div>
-
-                  <div class="flex items-center space-x-3">
-                     <span class="slider-label text-sm font-medium text-gray-600">密度 (ρ):</span>
-                     <span class="text-sm text-gray-700">7850 kg/m³ (鋼の参考値)</span>
-                 </div>
-                 <div class="md:col-span-2 mt-2">
-                      <p class="text-sm font-medium text-gray-600">ギア比 (グラフに表示):</p>
-                      <p class="text-xs text-gray-500">
-                          1st: 4.055, 2nd: 2.369, 3rd: 1.582, 4th: 1.192, 5th: 1.000, 6th: 0.872
-                      </p>
-                 </div>
-             </div>
+        <div class="mb-0 -mb-px"> <button id="tabE92M3" class="tab-button active" data-vehicle="E92M3">E92 M3</button>
+            <button id="tabR32GTR" class="tab-button" data-vehicle="R32GTR">R32 GTR</button>
         </div>
 
+        <div class="param-group" style="border-top-left-radius: 0;"> <h2 class="section-title">基本設定 (車両固定値)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                <p class="text-sm text-gray-700">最大エンジン回転数: <span id="fixedMaxEngineRpm" class="fixed-value"></span></p>
+                <p class="text-sm text-gray-700">最速ギア比: <span id="fixedFastestGearRatio" class="fixed-value"></span></p>
+                <p class="text-sm text-gray-700">エンジン最大トルク: <span id="fixedMaxEngineTorque" class="fixed-value"></span></p>
+                <p class="text-sm text-gray-700">1速ギア比: <span id="fixedFirstGearRatio" class="fixed-value"></span></p>
+            </div>
+            <p id="vehicleNote" class="text-xs text-orange-600 mt-2"></p>
+        </div>
 
-        <div class="mb-6">
-            <h2 class="text-lg font-semibold text-gray-700 mb-4 text-center">慣性モーメント & 回転運動エネルギー vs エンジン回転数</h2>
-            <div class="bg-white p-4 rounded-lg shadow-inner" style="height: 450px;"> <canvas id="combinedChart"></canvas>
+        <div class="param-group">
+            <h2 class="section-title">シャフト構成</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">シャフトタイプ:</label>
+                <div class="flex space-x-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="shaftType" value="onePiece" checked class="form-radio h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500">
+                        <span class="ml-2 text-sm text-gray-700">ワンピース</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="shaftType" value="twoPiece" class="form-radio h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500">
+                        <span class="ml-2 text-sm text-gray-700">ツーピース</span>
+                    </label>
+                </div>
+            </div>
+            <div id="twoPieceGlobalParams" class="space-y-3 hidden">
+                 <h3 class="text-md font-semibold text-gray-700 pt-2 border-t">ツーピースシャフト 全体設定</h3>
+                 <div class="flex items-center space-x-3">
+                    <label for="tpTotalLength" class="slider-label text-gray-600">総全長 (L<sub>total</sub>):</label>
+                    <input type="range" id="tpTotalLength" min="1000" max="3000" value="2000" step="10">
+                    <span id="tpTotalLengthValue" class="value-display">2000 mm</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <label for="tpCbPosition" class="slider-label text-gray-600">CB位置 (L1割合):</label>
+                    <input type="range" id="tpCbPosition" min="10" max="90" value="50" step="1">
+                    <span id="tpCbPositionValue" class="value-display">50 %</span>
+                </div>
+                <p class="text-xs text-gray-500 ml-2">L1: <span id="tpL1Value">1000 mm</span>, L2: <span id="tpL2Value">1000 mm</span></p>
             </div>
         </div>
 
-        <div>
-             <h2 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">計算結果</h2>
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div class="bg-sky-50 p-4 rounded-md border border-sky-200">
-                     <p class="text-sm text-gray-600">慣性モーメント (I): <span class="text-xs">(回転しにくさ)</span></p>
-                     <p id="inertiaValueDisplay" class="text-xl font-semibold text-sky-700">-.-- kg·m²</p>
-                     <p id="errorMessage" class="text-xs text-red-600 mt-1"></p>
+        <div class="param-group">
+            <h2 class="section-title">シャフト個別寸法設定</h2>
+            <div id="onePieceParams" class="space-y-3">
+                <h3 class="text-md font-semibold text-gray-700">ワンピースシャフト</h3>
+                <div class="flex items-center space-x-3">
+                    <label for="opLength" class="slider-label text-gray-600">全長 (L):</label>
+                    <input type="range" id="opLength" min="500" max="2500" value="1500" step="10">
+                    <span id="opLengthValue" class="value-display">1500 mm</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <label for="opDiameter" class="slider-label text-gray-600">外径 (D):</label>
+                    <input type="range" id="opDiameter" min="20" max="120" value="60">
+                    <span id="opDiameterValue" class="value-display">60 mm</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <label for="opThickness" class="slider-label text-gray-600">肉厚 (t):</label>
+                    <input type="range" id="opThickness" min="1" max="10" value="3" step="0.1">
+                    <span id="opThicknessValue" class="value-display">3.0 mm</span>
+                </div>
+            </div>
+            <div id="twoPieceParams" class="hidden">
+                 <h3 class="text-md font-semibold text-gray-700 mb-3">ツーピースシャフト (個別)</h3>
+                 <div class="md:grid md:grid-cols-2 md:gap-x-6 space-y-4 md:space-y-0">
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-semibold text-gray-600 border-b pb-1">シャフト 1 (前側)</h4>
+                        <div class="flex items-center space-x-3">
+                            <label for="tpD1" class="slider-label text-gray-600">外径 (D1):</label>
+                            <input type="range" id="tpD1" min="20" max="120" value="60">
+                            <span id="tpD1Value" class="value-display">60 mm</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <label for="tpT1" class="slider-label text-gray-600">肉厚 (t1):</label>
+                            <input type="range" id="tpT1" min="1" max="10" value="3" step="0.1">
+                            <span id="tpT1Value" class="value-display">3.0 mm</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-semibold text-gray-600 border-b pb-1">シャフト 2 (後側)</h4>
+                        <div class="flex items-center space-x-3">
+                            <label for="tpD2" class="slider-label text-gray-600">外径 (D2):</label>
+                            <input type="range" id="tpD2" min="20" max="120" value="60">
+                            <span id="tpD2Value" class="value-display">60 mm</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <label for="tpT2" class="slider-label text-gray-600">肉厚 (t2):</label>
+                            <input type="range" id="tpT2" min="1" max="10" value="3" step="0.1">
+                            <span id="tpT2Value" class="value-display">3.0 mm</span>
+                        </div>
+                    </div>
                  </div>
-                 <div class="bg-emerald-50 p-4 rounded-md border border-emerald-200">
-                     <p class="text-sm text-gray-600">回転運動エネルギー (E_rot): <span class="text-xs">(回転の勢い・エネルギー)</span></p>
-                     <p id="kineticEnergyValueDisplay" class="text-lg font-semibold text-emerald-700">-.-- J ～ -.-- J</p>
-                     <p class="text-xs text-gray-500 mt-1">5速ギア (1.000:1) での 1000 RPM ～ 8000 RPM の範囲</p>
-                 </div>
-                 <div class="md:col-span-2 bg-yellow-50 p-3 rounded-md border border-yellow-200 mt-4">
-                    <p class="text-xs text-yellow-800">
-                        <strong>注記:</strong><br>
-                        - <strong class="font-semibold">慣性モーメント</strong>は物体の形状と質量で決まる「回転しにくさ」で、RPMやギア比に依存しません。<br>
-                        - <strong class="font-semibold">回転運動エネルギー</strong>は物体が回転することで持つエネルギーで、慣性モーメントと<strong class="font-semibold">回転速度の2乗</strong>に比例します。グラフは各ギア比でのエネルギー変化を示します。
-                    </p>
-                 </div>
+            </div>
+        </div>
+
+        <div class="results-group">
+            <h2 class="section-title">計算結果指標</h2>
+            <div class="results-card mb-4">
+                <h3 class="text-md font-semibold text-gray-700 mb-2">プロペラシャフト基本情報</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 result-item">
+                    <p>最大想定プロペラシャフト回転数: <strong id="maxPropshaftRpm">-.-- RPM</strong></p>
+                    <p>最大想定プロペラシャフトトルク: <strong id="maxPropshaftTorque">-.-- Nm</strong></p>
+                </div>
+            </div>
+            <div id="onePieceResultsDisplay" class="results-card">
+                <h3 class="text-md font-semibold text-gray-700 mb-2">ワンピースシャフト 解析結果</h3>
+                <div id="opResultsContent" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 result-item"></div>
+                <p id="opOverallErrorMessage" class="text-xs text-red-600 mt-2"></p>
+                <div class="chart-container">
+                    <canvas id="onePieceEnergyChart"></canvas>
+                </div>
+            </div>
+            <div id="twoPieceResultsDisplay" class="hidden">
+                <div class="md:grid md:grid-cols-2 md:gap-x-6">
+                    <div class="results-card mb-3 md:mb-0">
+                        <h3 class="text-md font-semibold text-gray-700 mb-2">シャフト1 解析結果</h3>
+                        <div id="tpS1ResultsContent" class="grid grid-cols-1 gap-y-3 result-item"></div>
+                        <p id="tpS1ErrorMessage" class="text-xs text-red-600 mt-2"></p>
+                    </div>
+                    <div class="results-card">
+                        <h3 class="text-md font-semibold text-gray-700 mb-2">シャフト2 解析結果</h3>
+                        <div id="tpS2ResultsContent" class="grid grid-cols-1 gap-y-3 result-item"></div>
+                         <p id="tpS2ErrorMessage" class="text-xs text-red-600 mt-2"></p>
+                    </div>
+                </div>
+                 <div class="chart-container mt-4">
+                    <canvas id="twoPieceEnergyChart"></canvas>
+                </div>
+                <div class="results-card mt-4">
+                    <h3 class="text-md font-semibold text-gray-700 mb-2">ツーピースシャフト システム全体解析</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 result-item">
+                        <p>システム最小危険回転数 (N<sub>c,sys</sub>): <strong id="tpSystemCriticalSpeed">-.-- RPM</strong></p>
+                        <p>安全上限回転数 (0.7 * N<sub>c,sys</sub>): <strong id="tpSystemSafeRpm">-.-- RPM</strong></p>
+                        <p>ステータス (危険回転数): <span id="tpSystemCritStatus" class="">計算中...</span></p>
+                        <p>総慣性モーメント: <strong id="tpTotalInertia">-.-- kg·m²</strong></p>
+                    </div>
+                </div>
+            </div>
+             <div class="bg-yellow-50 p-3 rounded-md border border-yellow-200 mt-4 text-xs text-yellow-800">
+                <strong>注記:</strong> 計算は鋼材(ヤング率207GPa, 密度7850kg/m³, 降伏応力235MPa, ねじり安全率2.0)、両端単純支持を前提とした簡略モデルです。実際の設計ではより詳細な解析が必要です。グラフの回転運動エネルギーは、各ギア比におけるプロペラシャフト全体のエネルギーを示します。<span id="additionalVehicleNote"></span>
              </div>
         </div>
     </div>
 
     <script>
         // --- 定数 ---
-        const DENSITY_STEEL = 7850; // kg/m^3
-        const ENGINE_RPM_MIN = 1000;
-        const ENGINE_RPM_MAX = 8000;
-        const RPM_STEP = 500; // グラフの解像度
-        const GEAR_RATIOS = [ // ギア比を定義
-            { name: '1st', value: 4.055, color: 'rgb(239, 68, 68)' },  // red-500
-            { name: '2nd', value: 2.369, color: 'rgb(249, 115, 22)' }, // orange-500
-            { name: '3rd', value: 1.582, color: 'rgb(234, 179, 8)' },  // yellow-500
-            { name: '4th', value: 1.192, color: 'rgb(132, 204, 22)' }, // lime-500
-            { name: '5th', value: 1.000, color: 'rgb(16, 185, 129)' }, // emerald-500 (基準)
-            { name: '6th', value: 0.872, color: 'rgb(59, 130, 246)' }  // blue-500
-        ];
-        const REFERENCE_GEAR_INDEX = 4; // 5th gear (index 4) を基準とする
+        const E_STEEL = 207e9; // Pa (N/m^2) - ヤング率
+        const RHO_STEEL = 7850; // kg/m^3 - 密度
+        const SIGMA_Y_STEEL = 235e6; // Pa - 鋼の降伏応力 (SS400相当)
+        const SHEAR_YIELD_FACTOR = 1 / Math.sqrt(3); // 約0.577 (ミーゼス)
+        const TAU_Y_STEEL = SIGMA_Y_STEEL * SHEAR_YIELD_FACTOR; // Pa - せん断降伏応力
+        const SAFETY_FACTOR_TORSION = 2.0; // ねじりに対する安全率
+        const TAU_A_STEEL = TAU_Y_STEEL / SAFETY_FACTOR_TORSION; // Pa - 許容せん断応力
+        
+        const ENGINE_RPM_MIN_FOR_GRAPH = 1000;
+        const RPM_STEP_FOR_GRAPH = 500;
 
-        // --- DOM要素の取得 ---
-        const diameterSlider = document.getElementById('diameter');
-        const lengthSlider = document.getElementById('length');
-        const thicknessSlider = document.getElementById('thickness');
-        // gearRatioSelect は削除
+        // Vehicle Specific Parameters
+        const VEHICLE_PARAMS = {
+            E92M3: {
+                name: "E92 M3",
+                maxEngineRpm: 8000,
+                fastestGearRatio: 0.872,
+                maxEngineTorque: 350,
+                firstGearRatio: 4.055,
+                graphGearRatios: [
+                    { name: '1速', value: 4.055, color: 'rgb(239, 68, 68)' },
+                    { name: '2速', value: 2.369, color: 'rgb(249, 115, 22)' },
+                    { name: '3速', value: 1.582, color: 'rgb(234, 179, 8)' },
+                    { name: '4速', value: 1.192, color: 'rgb(132, 204, 22)' },
+                    { name: '5速', value: 1.000, color: 'rgb(16, 185, 129)' },
+                    { name: '6速', value: 0.872, color: 'rgb(59, 130, 246)' }
+                ],
+                note: ""
+            },
+            R32GTR: {
+                name: "R32 GTR",
+                maxEngineRpm: 7400, // Updated value
+                fastestGearRatio: 0.752,
+                maxEngineTorque: 350, // 仮の値 (標準は約353Nm)
+                firstGearRatio: 3.214,
+                graphGearRatios: [
+                    { name: '1速', value: 3.214, color: 'rgb(239, 68, 68)' },
+                    { name: '2速', value: 1.925, color: 'rgb(249, 115, 22)' },
+                    { name: '3速', value: 1.302, color: 'rgb(234, 179, 8)' },
+                    { name: '4速', value: 1.000, color: 'rgb(132, 204, 22)' },
+                    { name: '5速', value: 0.752, color: 'rgb(16, 185, 129)' }
+                ],
+                note: "R32 GTRの最大トルクは仮の値です。実際の車両に合わせて調整してください。" // Updated note
+            }
+        };
+        let currentVehicleModelKey = 'E92M3'; // Default vehicle
 
-        const diameterValueSpan = document.getElementById('diameterValue');
-        const lengthValueSpan = document.getElementById('lengthValue');
-        const thicknessValueSpan = document.getElementById('thicknessValue');
-        const inertiaValueDisplay = document.getElementById('inertiaValueDisplay');
-        const kineticEnergyValueDisplay = document.getElementById('kineticEnergyValueDisplay');
-        const errorMessage = document.getElementById('errorMessage');
+        // --- DOM 要素 ---
+        const tabE92M3 = document.getElementById('tabE92M3');
+        const tabR32GTR = document.getElementById('tabR32GTR');
+        const vehicleNoteSpan = document.getElementById('vehicleNote');
+        const additionalVehicleNoteSpan = document.getElementById('additionalVehicleNote');
 
-        const ctx = document.getElementById('combinedChart').getContext('2d');
 
-        // --- Chart.js インスタンス ---
-        let combinedChart = null;
+        const shaftTypeRadios = document.querySelectorAll('input[name="shaftType"]');
+        const onePieceParamsDiv = document.getElementById('onePieceParams');
+        const twoPieceParamsDiv = document.getElementById('twoPieceParams');
+        const twoPieceGlobalParamsDiv = document.getElementById('twoPieceGlobalParams');
+        const onePieceResultsDisplayDiv = document.getElementById('onePieceResultsDisplay');
+        const twoPieceResultsDisplayDiv = document.getElementById('twoPieceResultsDisplay');
 
-        // --- 計算関数 (変更なし) ---
-        function calculateInertia(diameterMM, lengthMM, thicknessMM) {
-            errorMessage.textContent = '';
-            const D_m = diameterMM / 1000;
-            const L_m = lengthMM / 1000;
-            const t_m = thicknessMM / 1000;
+        // Fixed Basic Settings Display Spans
+        const fixedMaxEngineRpmSpan = document.getElementById('fixedMaxEngineRpm');
+        const fixedFastestGearRatioSpan = document.getElementById('fixedFastestGearRatio');
+        const fixedMaxEngineTorqueSpan = document.getElementById('fixedMaxEngineTorque');
+        const fixedFirstGearRatioSpan = document.getElementById('fixedFirstGearRatio');
+
+        // Sliders and their value displays
+        const opLengthSlider = document.getElementById('opLength');
+        const opDiameterSlider = document.getElementById('opDiameter');
+        const opThicknessSlider = document.getElementById('opThickness');
+        const opLengthValueSpan = document.getElementById('opLengthValue');
+        const opDiameterValueSpan = document.getElementById('opDiameterValue');
+        const opThicknessValueSpan = document.getElementById('opThicknessValue');
+
+        const tpTotalLengthSlider = document.getElementById('tpTotalLength');
+        const tpCbPositionSlider = document.getElementById('tpCbPosition');
+        const tpD1Slider = document.getElementById('tpD1');
+        const tpT1Slider = document.getElementById('tpT1');
+        const tpD2Slider = document.getElementById('tpD2');
+        const tpT2Slider = document.getElementById('tpT2');
+        const tpTotalLengthValueSpan = document.getElementById('tpTotalLengthValue');
+        const tpCbPositionValueSpan = document.getElementById('tpCbPositionValue');
+        const tpL1ValueSpan = document.getElementById('tpL1Value');
+        const tpL2ValueSpan = document.getElementById('tpL2Value');
+        const tpD1ValueSpan = document.getElementById('tpD1Value');
+        const tpT1ValueSpan = document.getElementById('tpT1Value');
+        const tpD2ValueSpan = document.getElementById('tpD2Value');
+        const tpT2ValueSpan = document.getElementById('tpT2Value');
+
+        // Results Displays (Global)
+        const maxPropshaftRpmSpan = document.getElementById('maxPropshaftRpm');
+        const maxPropshaftTorqueSpan = document.getElementById('maxPropshaftTorque');
+
+        // Results Displays (One-Piece)
+        const opResultsContentDiv = document.getElementById('opResultsContent');
+        const opOverallErrorMessageSpan = document.getElementById('opOverallErrorMessage');
+
+        // Results Displays (Two-Piece)
+        const tpS1ResultsContentDiv = document.getElementById('tpS1ResultsContent');
+        const tpS2ResultsContentDiv = document.getElementById('tpS2ResultsContent');
+        const tpS1ErrorMessageSpan = document.getElementById('tpS1ErrorMessage');
+        const tpS2ErrorMessageSpan = document.getElementById('tpS2ErrorMessage');
+        const tpSystemCriticalSpeedSpan = document.getElementById('tpSystemCriticalSpeed');
+        const tpSystemSafeRpmSpan = document.getElementById('tpSystemSafeRpm');
+        const tpSystemCritStatusSpan = document.getElementById('tpSystemCritStatus');
+        const tpTotalInertiaSpan = document.getElementById('tpTotalInertia');
+
+        // Chart instances
+        let onePieceEnergyChart = null;
+        let twoPieceEnergyChart = null;
+        const onePieceChartCtx = document.getElementById('onePieceEnergyChart').getContext('2d');
+        const twoPieceChartCtx = document.getElementById('twoPieceEnergyChart').getContext('2d');
+
+        // --- イベントリスナー ---
+        tabE92M3.addEventListener('click', () => switchVehicleModel('E92M3'));
+        tabR32GTR.addEventListener('click', () => switchVehicleModel('R32GTR'));
+
+        shaftTypeRadios.forEach(radio => radio.addEventListener('change', updateUI));
+        [ opLengthSlider, opDiameterSlider, opThicknessSlider,
+         tpTotalLengthSlider, tpCbPositionSlider, tpD1Slider, tpT1Slider, tpD2Slider, tpT2Slider
+        ].forEach(el => el.addEventListener('input', handleInputChange));
+        
+        // --- 車両モデル切り替え ---
+        function switchVehicleModel(modelKey) {
+            currentVehicleModelKey = modelKey;
+            tabE92M3.classList.toggle('active', modelKey === 'E92M3');
+            tabR32GTR.classList.toggle('active', modelKey === 'R32GTR');
+            updateFixedParamsDisplay();
+            performCalculations();
+        }
+
+        function updateFixedParamsDisplay() {
+            const params = VEHICLE_PARAMS[currentVehicleModelKey];
+            fixedMaxEngineRpmSpan.textContent = `${params.maxEngineRpm} RPM`;
+            fixedFastestGearRatioSpan.textContent = params.fastestGearRatio.toFixed(3);
+            fixedMaxEngineTorqueSpan.textContent = `${params.maxEngineTorque} Nm`;
+            fixedFirstGearRatioSpan.textContent = params.firstGearRatio.toFixed(3);
+            vehicleNoteSpan.textContent = params.note || "";
+            additionalVehicleNoteSpan.textContent = params.note || ""; // Update the note in the yellow box as well
+        }
+
+
+        // --- 計算関数 (内容は変更なし) ---
+        function calculateShaftProperties(D_m, t_m, L_m) {
+            if (D_m <= 0 || t_m <= 0 || L_m <= 0) return { mass: null, inertia: null, Zp: null, error: "寸法は正の値である必要があります。" };
             const d_m = D_m - 2 * t_m;
-
-            if (d_m <= 0) {
-                errorMessage.textContent = 'エラー: 管厚が大きすぎるため、内径が0以下になります。';
-                return null;
-            }
-            if (D_m <= 0 || L_m <= 0 || t_m <=0) {
-                 errorMessage.textContent = 'エラー: 寸法は正の値である必要があります。';
-                 return null;
-            }
+            if (d_m <= 0) return { mass: null, inertia: null, Zp: null, error: "肉厚が大きすぎるか、外径が小さすぎます。" };
 
             const R_m = D_m / 2;
             const r_m = d_m / 2;
-            const mass = DENSITY_STEEL * Math.PI * (Math.pow(R_m, 2) - Math.pow(r_m, 2)) * L_m;
+            const area = Math.PI * (Math.pow(R_m, 2) - Math.pow(r_m, 2));
+            const mass = RHO_STEEL * area * L_m;
             const inertia = 0.5 * mass * (Math.pow(R_m, 2) + Math.pow(r_m, 2));
-            return inertia;
+            const Zp = (Math.PI / 16) * (Math.pow(D_m, 4) - Math.pow(d_m, 4)) / D_m; // m^3
+            return { mass, inertia, Zp, error: null };
         }
 
-        function calculateRotationalKineticEnergy(inertia, engineRpm, gearRatio) {
-            if (inertia === null || inertia <= 0 || gearRatio <= 0) {
-                return NaN; // 計算不可の場合は NaN を返す
-            }
-            const shaftRpm = engineRpm / gearRatio;
-            const omega = shaftRpm * (2 * Math.PI) / 60;
-            const kineticEnergy = 0.5 * inertia * Math.pow(omega, 2);
-            return kineticEnergy;
+        function calculateRotationalKineticEnergy(inertia, shaftRpm) {
+            if (inertia === null || isNaN(shaftRpm) || shaftRpm < 0) return null;
+            const omega = shaftRpm * (2 * Math.PI) / 60; // rad/s
+            return 0.5 * inertia * Math.pow(omega, 2);
         }
 
+        function calculateCriticalSpeed(L_m, D_m, t_m) {
+            if (L_m <= 0 || D_m <= 0 || t_m <= 0) return null;
+            const d_m = D_m - 2 * t_m;
+            if (d_m <= 0) return null;
+            const I_area = (Math.PI / 64) * (Math.pow(D_m, 4) - Math.pow(d_m, 4));
+            const A_material = (Math.PI / 4) * (Math.pow(D_m, 2) - Math.pow(d_m, 2));
+            if (I_area <= 0 || A_material <= 0) return null;
+            const f_n_hz = (Math.PI / (2 * Math.pow(L_m, 2))) * Math.sqrt((E_STEEL * I_area) / (RHO_STEEL * A_material));
+            return f_n_hz * 60;
+        }
 
-        // --- グラフ更新関数 (変更あり) ---
-        function updateChart() {
-            // パラメータ取得
-            const diameter = parseFloat(diameterSlider.value);
-            const length = parseFloat(lengthSlider.value);
-            const thickness = parseFloat(thicknessSlider.value);
-
-            // スパン更新
-            diameterValueSpan.textContent = `${diameter} mm`;
-            lengthValueSpan.textContent = `${length} mm`;
-            thicknessValueSpan.textContent = `${thickness.toFixed(1)} mm`;
-
-            // 慣性モーメント計算 & 表示
-            const inertia = calculateInertia(diameter, length, thickness);
-            if (inertia !== null) {
-                inertiaValueDisplay.textContent = `${inertia.toFixed(4)} kg·m²`;
-            } else {
-                inertiaValueDisplay.textContent = `計算不可`;
-                kineticEnergyValueDisplay.textContent = `計算不可`; // エネルギーも計算不可
+        function calculateTorsionalStrength(Zp_m3) {
+            if (Zp_m3 === null || Zp_m3 <= 0) return { T_allow: null };
+            const T_allow = Zp_m3 * TAU_A_STEEL;
+            return { T_allow };
+        }
+        
+        // --- UI更新 & 計算実行 ---
+        function updateUI() {
+            const selectedType = document.querySelector('input[name="shaftType"]:checked').value;
+            if (selectedType === 'onePiece') {
+                onePieceParamsDiv.classList.remove('hidden');
+                twoPieceParamsDiv.classList.add('hidden');
+                twoPieceGlobalParamsDiv.classList.add('hidden');
+                onePieceResultsDisplayDiv.classList.remove('hidden');
+                twoPieceResultsDisplayDiv.classList.add('hidden');
+            } else { // twoPiece
+                onePieceParamsDiv.classList.add('hidden');
+                twoPieceParamsDiv.classList.remove('hidden');
+                twoPieceGlobalParamsDiv.classList.remove('hidden');
+                onePieceResultsDisplayDiv.classList.add('hidden');
+                twoPieceResultsDisplayDiv.classList.remove('hidden');
             }
+            performCalculations();
+        }
 
-            // --- グラフデータ生成 ---
-            const labels = [];
-            const inertiaData = [];
-            const kineticEnergyDatasets = GEAR_RATIOS.map(gear => ({
-                label: `エネルギー (${gear.name})`,
-                data: [],
-                borderColor: gear.color,
-                backgroundColor: gear.color.replace('rgb', 'rgba').replace(')', ', 0.1)'), // 透明度追加
-                borderWidth: 2,
-                pointRadius: 0, // 点を非表示にして線を強調
-                pointHoverRadius: 4, // ホバー時は表示
-                yAxisID: 'yEnergy',
-                tension: 0.1,
-            }));
+        function handleInputChange(event) {
+            if (event.target.type === 'range') {
+                const valueSpan = document.getElementById(event.target.id + 'Value');
+                if (valueSpan) {
+                    let unit = ' mm';
+                    if (event.target.id === 'tpCbPosition') unit = ' %';
+                    const displayValue = (event.target.id === 'opThickness' || event.target.id === 'tpT1' || event.target.id === 'tpT2')
+                                       ? parseFloat(event.target.value).toFixed(1)
+                                       : event.target.value;
+                    valueSpan.textContent = displayValue + unit;
 
-            let minEnergyRef = NaN; // 基準ギアの最小エネルギー
-            let maxEnergyRef = NaN; // 基準ギアの最大エネルギー
-
-            if (inertia !== null) {
-                for (let rpm = ENGINE_RPM_MIN; rpm <= ENGINE_RPM_MAX; rpm += RPM_STEP) {
-                    labels.push(`${rpm} RPM`);
-                    inertiaData.push(inertia); // 慣性モーメントはRPMによらず一定
-
-                    // 各ギア比についてエネルギーを計算し、対応するデータセットに追加
-                    GEAR_RATIOS.forEach((gear, index) => {
-                        const energy = calculateRotationalKineticEnergy(inertia, rpm, gear.value);
-                        kineticEnergyDatasets[index].data.push(energy);
-
-                        // 基準ギア (5th) のエネルギー範囲を記録
-                        if (index === REFERENCE_GEAR_INDEX) {
-                            if (rpm === ENGINE_RPM_MIN) minEnergyRef = energy;
-                            if (rpm === ENGINE_RPM_MAX) maxEnergyRef = energy;
-                        }
-                    });
+                    if (event.target.id === 'tpTotalLength' || event.target.id === 'tpCbPosition') {
+                        const totalL = parseFloat(tpTotalLengthSlider.value);
+                        const cbPos = parseFloat(tpCbPositionSlider.value) / 100;
+                        tpL1ValueSpan.textContent = (totalL * cbPos).toFixed(0) + ' mm';
+                        tpL2ValueSpan.textContent = (totalL * (1 - cbPos)).toFixed(0) + ' mm';
+                    }
                 }
-                 // 基準ギアのエネルギー範囲を表示
-                 if (!isNaN(minEnergyRef) && !isNaN(maxEnergyRef)) {
-                    kineticEnergyValueDisplay.textContent = `${minEnergyRef.toFixed(2)} J ～ ${maxEnergyRef.toFixed(2)} J`;
-                 } else {
-                     kineticEnergyValueDisplay.textContent = `計算不可`;
-                 }
+            }
+            performCalculations();
+        }
 
-            } else {
-                 // 慣性モーメントが計算できない場合
-                 for (let rpm = ENGINE_RPM_MIN; rpm <= ENGINE_RPM_MAX; rpm += RPM_STEP) {
-                     labels.push(`${rpm} RPM`);
-                     inertiaData.push(NaN);
-                     GEAR_RATIOS.forEach((gear, index) => {
-                         kineticEnergyDatasets[index].data.push(NaN);
-                     });
-                 }
-                 kineticEnergyValueDisplay.textContent = `計算不可`;
+        function renderShaftResults(contentDiv, shaftName, props, Nc, safeNc, T_allow, maxShaftRpmForEnergyCalc, maxShaftTorqueForStrength, errorMsgSpan, errorText) {
+            contentDiv.innerHTML = ''; 
+            errorMsgSpan.textContent = '';
+
+            if (errorText) {
+                errorMsgSpan.textContent = `${shaftName}: ${errorText}`;
+                return;
+            }
+            if (!props || props.inertia === null) {
+                 errorMsgSpan.textContent = `${shaftName}: 寸法エラーにより計算できません。`;
+                 return;
+            }
+            const torsionSafetyFactor = (T_allow && maxShaftTorqueForStrength && maxShaftTorqueForStrength > 0) ? (T_allow / maxShaftTorqueForStrength) : null;
+
+            let critStatusClass = '';
+            let critStatusText = '計算不可';
+            if (Nc !== null && safeNc !== null && !isNaN(maxShaftRpmForEnergyCalc)) {
+                if (maxShaftRpmForEnergyCalc <= safeNc) { critStatusText = 'OK (安全域)'; critStatusClass = 'status-ok'; }
+                else if (maxShaftRpmForEnergyCalc <= Nc) { critStatusText = `注意 (安全域超過: ${(maxShaftRpmForEnergyCalc / Nc * 100).toFixed(0)}%)`; critStatusClass = 'status-warning'; }
+                else { critStatusText = '危険 (危険回転数超過)'; critStatusClass = 'status-danger'; }
+            }
+            
+            let torsionStatusClass = '';
+            let torsionStatusText = '計算不可';
+            if (torsionSafetyFactor !== null) {
+                if (torsionSafetyFactor >= SAFETY_FACTOR_TORSION) { torsionStatusText = `OK (安全率 ${torsionSafetyFactor.toFixed(2)})`; torsionStatusClass = 'status-ok'; }
+                else if (torsionSafetyFactor > 1.0) { torsionStatusText = `注意 (目標安全率未満: ${torsionSafetyFactor.toFixed(2)})`; torsionStatusClass = 'status-warning'; }
+                else { torsionStatusText = `強度不足 (安全率 ${torsionSafetyFactor.toFixed(2)})`; torsionStatusClass = 'status-danger'; }
             }
 
-            // --- Chart.js グラフ設定 ---
-             const chartData = {
-                labels: labels,
-                datasets: [
-                    { // 慣性モーメントのデータセット (変更なし、ただし色は調整)
-                        label: '慣性モーメント (I)',
-                        data: inertiaData,
-                        borderColor: 'rgb(108, 117, 125)', // gray-500
-                        backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 4,
-                        yAxisID: 'yInertia',
-                        tension: 0.1,
-                    },
-                     ...kineticEnergyDatasets // エネルギーのデータセットを展開して追加
-                ]
-            };
+            contentDiv.innerHTML = `
+                <p>慣性モーメント: <strong>${props.inertia !== null ? props.inertia.toFixed(4) : '-.--'} kg·m²</strong></p>
+                <p>極断面係数 (Z<sub>p</sub>): <strong>${props.Zp !== null ? (props.Zp * 1e9).toFixed(1) : '-.--'} mm³</strong></p>
+                <p>許容トルク (T<sub>allow</sub>): <strong>${T_allow !== null ? T_allow.toFixed(1) : '-.--'} Nm</strong></p>
+                <p>ねじり安全率 (S<sub>f</sub>): <strong>${torsionSafetyFactor !== null ? torsionSafetyFactor.toFixed(2) : '-.--'}</strong></p>
+                <p>ステータス (ねじり強度): <span class="${torsionStatusClass}">${torsionStatusText}</span></p>
+                <p>危険回転数 (N<sub>c</sub>): <strong>${Nc !== null ? Nc.toFixed(0) : '-.--'} RPM</strong></p>
+                <p>安全上限回転数 (0.7*N<sub>c</sub>): <strong>${safeNc !== null ? safeNc.toFixed(0) : '-.--'} RPM</strong></p>
+                <p>ステータス (危険回転数): <span class="${critStatusClass}">${critStatusText}</span></p>
+            `;
+        }
+        
+        function updateEnergyChart(chartInstance, chartCtx, totalInertia, vehicleParams) {
+            const labels = [];
+            const datasets = [];
 
-            const chartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'エンジン回転数 (Engine RPM)',
-                            font: { size: 14 }
-                        }
-                    },
-                    yInertia: { // 慣性モーメント軸 (左)
-                        type: 'linear',
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: '慣性モーメント (kg·m²)',
-                            color: 'rgb(108, 117, 125)', // gray-500
-                            font: { size: 14 }
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                             color: 'rgb(108, 117, 125)',
-                             callback: function(value, index, values) {
-                                 if (value === 0) return '0';
-                                 return Math.abs(value) < 0.0001 && value !== 0 ? value.toExponential(2) : value.toFixed(4);
-                             }
-                        }
-                    },
-                    yEnergy: { // 回転運動エネルギー軸 (右)
-                        type: 'linear',
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: '回転運動エネルギー (J)',
-                            color: 'rgb(5, 150, 105)', // emerald-600 (代表色)
-                            font: { size: 14 }
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                             color: 'rgb(5, 150, 105)',
-                             callback: function(value, index, values) {
-                                 return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-                             }
-                        },
-                        grid: {
-                            drawOnChartArea: false, // 左軸のグリッドのみ表示
-                        },
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    // 'エネルギー (Xth)' から '(Xth)' を削除
-                                    label = label.replace(/^エネルギー \((.*?)\)/, '$1');
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null && !isNaN(context.parsed.y)) {
-                                    if (context.dataset.yAxisID === 'yInertia') {
-                                         label += context.parsed.y.toExponential(3) + ' kg·m²';
-                                    } else if (context.dataset.yAxisID === 'yEnergy') {
-                                         label += context.parsed.y.toFixed(2) + ' J';
-                                    } else {
-                                         label += context.parsed.y;
-                                    }
-                                } else {
-                                    label += 'N/A'; // 計算不可の場合
-                                }
-                                return label;
-                            },
-                             title: function(tooltipItems) {
-                                // ツールチップのタイトルに慣性モーメントも表示（オプション）
-                                const inertiaValue = combinedChart.data.datasets[0].data[tooltipItems[0].dataIndex];
-                                let title = tooltipItems[0].label; // RPM
-                                if (inertiaValue !== null && !isNaN(inertiaValue)) {
-                                     title += ` (I: ${inertiaValue.toExponential(3)} kg·m²)`;
-                                }
-                                return title;
-                             }
-                        }
-                    },
-                    legend: {
-                        position: 'bottom', // 凡例を下に移動してスペース確保
-                        labels: {
-                             font: { size: 10 }, // 凡例のフォントサイズを少し小さく
-                             // 慣性モーメントの凡例はクリックで非表示にできないようにする (オプション)
-                             // filter: function(legendItem, chartData) {
-                             //    return legendItem.datasetIndex !== 0; // インデックス0（慣性モーメント）を除外
-                             //}
-                        }
-                    }
-                },
-                spanGaps: true,
-            };
+            if (totalInertia === null || totalInertia <= 0) {
+                if (chartInstance) chartInstance.destroy(); // Destroy the old chart instance
+                return null; // Return null as no chart is (re)created
+            }
 
+            for (let engRpm = ENGINE_RPM_MIN_FOR_GRAPH; engRpm <= vehicleParams.maxEngineRpm; engRpm += RPM_STEP_FOR_GRAPH) {
+                labels.push(`${engRpm} RPM`);
+            }
 
-            if (combinedChart) {
-                combinedChart.data = chartData;
-                combinedChart.options = chartOptions;
-                combinedChart.update();
-            } else {
-                combinedChart = new Chart(ctx, {
-                    type: 'line',
-                    data: chartData,
-                    options: chartOptions
+            vehicleParams.graphGearRatios.forEach(gear => {
+                const energyData = [];
+                for (let engRpm = ENGINE_RPM_MIN_FOR_GRAPH; engRpm <= vehicleParams.maxEngineRpm; engRpm += RPM_STEP_FOR_GRAPH) {
+                    const shaftRpm = engRpm / gear.value;
+                    energyData.push(calculateRotationalKineticEnergy(totalInertia, shaftRpm));
+                }
+                datasets.push({
+                    label: `${gear.name} (${gear.value.toFixed(3)})`,
+                    data: energyData,
+                    borderColor: gear.color,
+                    backgroundColor: gear.color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    tension: 0.1,
                 });
+            });
+            
+            const chartData = { labels, datasets };
+            const chartOptions = {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'エンジン回転数 (RPM)' } },
+                    y: { title: { display: true, text: '回転運動エネルギー (J)' }, beginAtZero: true }
+                },
+                plugins: { legend: { position: 'top', labels: {font: {size: 10}} } }
+            };
+
+            if (chartInstance) {
+                chartInstance.data = chartData;
+                chartInstance.options = chartOptions; 
+                chartInstance.update();
+                return chartInstance;
+            } else {
+                return new Chart(chartCtx, { type: 'line', data: chartData, options: chartOptions });
             }
         }
 
-        // --- イベントリスナーの設定 ---
-        diameterSlider.addEventListener('input', updateChart);
-        lengthSlider.addEventListener('input', updateChart);
-        thicknessSlider.addEventListener('input', updateChart);
-        // gearRatioSelect のリスナーは削除
+        function performCalculations() {
+            const currentParams = VEHICLE_PARAMS[currentVehicleModelKey];
+            const maxShaftRpm = currentParams.maxEngineRpm / currentParams.fastestGearRatio;
+            maxPropshaftRpmSpan.textContent = `${maxShaftRpm.toFixed(0)} RPM`;
+            const maxShaftTorque = currentParams.maxEngineTorque * currentParams.firstGearRatio;
+            maxPropshaftTorqueSpan.textContent = `${maxShaftTorque.toFixed(1)} Nm`;
 
-        // --- 初期表示 ---
-        window.onload = updateChart;
+            const selectedType = document.querySelector('input[name="shaftType"]:checked').value;
+            opOverallErrorMessageSpan.textContent = '';
+            tpS1ErrorMessageSpan.textContent = '';
+            tpS2ErrorMessageSpan.textContent = '';
+
+            let currentTotalInertiaForChart = null;
+
+            if (selectedType === 'onePiece') {
+                const L = parseFloat(opLengthSlider.value) / 1000;
+                const D = parseFloat(opDiameterSlider.value) / 1000;
+                const t = parseFloat(opThicknessSlider.value) / 1000;
+
+                const props = calculateShaftProperties(D, t, L);
+                const Nc = props.error ? null : calculateCriticalSpeed(L, D, t);
+                const safeNc = Nc ? Nc * 0.7 : null;
+                const torsionProps = props.error ? {T_allow: null} : calculateTorsionalStrength(props.Zp);
+                
+                renderShaftResults(opResultsContentDiv, "ワンピースシャフト", props, Nc, safeNc, torsionProps.T_allow, maxShaftRpm, maxShaftTorque, opOverallErrorMessageSpan, props.error);
+                currentTotalInertiaForChart = props.inertia;
+                onePieceEnergyChart = updateEnergyChart(onePieceEnergyChart, onePieceChartCtx, currentTotalInertiaForChart, currentParams);
+                if (twoPieceEnergyChart) { twoPieceEnergyChart.destroy(); twoPieceEnergyChart = null; }
+
+            } else { // twoPiece
+                const totalL_m = parseFloat(tpTotalLengthSlider.value) / 1000;
+                const cbRatio = parseFloat(tpCbPositionSlider.value) / 100;
+                const L1_m = totalL_m * cbRatio;
+                const L2_m = totalL_m * (1 - cbRatio);
+
+                const D1_m = parseFloat(tpD1Slider.value) / 1000;
+                const t1_m = parseFloat(tpT1Slider.value) / 1000;
+                const D2_m = parseFloat(tpD2Slider.value) / 1000;
+                const t2_m = parseFloat(tpT2Slider.value) / 1000;
+
+                const props1 = calculateShaftProperties(D1_m, t1_m, L1_m);
+                const Nc1 = props1.error ? null : calculateCriticalSpeed(L1_m, D1_m, t1_m);
+                const safeNc1 = Nc1 ? Nc1 * 0.7 : null;
+                const torsionProps1 = props1.error ? {T_allow: null} : calculateTorsionalStrength(props1.Zp);
+                renderShaftResults(tpS1ResultsContentDiv, "シャフト1", props1, Nc1, safeNc1, torsionProps1.T_allow, maxShaftRpm, maxShaftTorque, tpS1ErrorMessageSpan, props1.error);
+
+                const props2 = calculateShaftProperties(D2_m, t2_m, L2_m);
+                const Nc2 = props2.error ? null : calculateCriticalSpeed(L2_m, D2_m, t2_m);
+                const safeNc2 = Nc2 ? Nc2 * 0.7 : null;
+                const torsionProps2 = props2.error ? {T_allow: null} : calculateTorsionalStrength(props2.Zp);
+                renderShaftResults(tpS2ResultsContentDiv, "シャフト2", props2, Nc2, safeNc2, torsionProps2.T_allow, maxShaftRpm, maxShaftTorque, tpS2ErrorMessageSpan, props2.error);
+                
+                let systemNc = null;
+                if (Nc1 !== null && Nc2 !== null) systemNc = Math.min(Nc1, Nc2);
+                else if (Nc1 !== null) systemNc = Nc1;
+                else if (Nc2 !== null) systemNc = Nc2;
+                
+                const systemSafeNc = systemNc ? systemNc * 0.7 : null;
+                tpSystemCriticalSpeedSpan.textContent = systemNc ? `${systemNc.toFixed(0)} RPM` : '-.--';
+                tpSystemSafeRpmSpan.textContent = systemSafeNc ? `${systemSafeNc.toFixed(0)} RPM` : '-.--';
+
+                let systemCritStatusClass = '';
+                let systemCritStatusText = '計算不可';
+                if (systemNc !== null && systemSafeNc !== null && !isNaN(maxShaftRpm)) {
+                    if (maxShaftRpm <= systemSafeNc) { systemCritStatusText = 'OK (安全域)'; systemCritStatusClass = 'status-ok'; }
+                    else if (maxShaftRpm <= systemNc) { systemCritStatusText = `注意 (安全域超過: ${(maxShaftRpm / systemNc * 100).toFixed(0)}%)`; systemCritStatusClass = 'status-warning'; }
+                    else { systemCritStatusText = '危険 (危険回転数超過)'; systemCritStatusClass = 'status-danger'; }
+                }
+                tpSystemCritStatusSpan.className = systemCritStatusClass;
+                tpSystemCritStatusSpan.textContent = systemCritStatusText;
+
+                currentTotalInertiaForChart = (props1.inertia || 0) + (props2.inertia || 0);
+                tpTotalInertiaSpan.textContent = currentTotalInertiaForChart > 0 ? `${currentTotalInertiaForChart.toFixed(4)} kg·m²` : '-.--';
+                
+                twoPieceEnergyChart = updateEnergyChart(twoPieceEnergyChart, twoPieceChartCtx, currentTotalInertiaForChart, currentParams);
+                if (onePieceEnergyChart) { onePieceEnergyChart.destroy(); onePieceEnergyChart = null; }
+            }
+        }
+
+        // --- 初期化 ---
+        function initializeApp() {
+            // Initialize slider displays
+            const sliders = [
+                { id: 'opLength', unit: 'mm' }, { id: 'opDiameter', unit: 'mm' }, { id: 'opThickness', unit: 'mm', fixed: 1 },
+                { id: 'tpTotalLength', unit: 'mm' }, { id: 'tpCbPosition', unit: ' %' },
+                { id: 'tpD1', unit: 'mm' }, { id: 'tpT1', unit: 'mm', fixed: 1 },
+                { id: 'tpD2', unit: 'mm' }, { id: 'tpT2', unit: 'mm', fixed: 1 }
+            ];
+            sliders.forEach(s => {
+                const sliderEl = document.getElementById(s.id);
+                const displayEl = document.getElementById(s.id + 'Value');
+                if (sliderEl && displayEl) {
+                    const value = s.fixed ? parseFloat(sliderEl.value).toFixed(s.fixed) : sliderEl.value;
+                    displayEl.textContent = value + s.unit;
+                }
+            });
+            const totalL = parseFloat(tpTotalLengthSlider.value);
+            const cbPos = parseFloat(tpCbPositionSlider.value) / 100;
+            tpL1ValueSpan.textContent = (totalL * cbPos).toFixed(0) + ' mm';
+            tpL2ValueSpan.textContent = (totalL * (1 - cbPos)).toFixed(0) + ' mm';
+            
+            switchVehicleModel(currentVehicleModelKey); 
+        }
+
+        initializeApp();
 
     </script>
-
 </body>
 </html>
+
