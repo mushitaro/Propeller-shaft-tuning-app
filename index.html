@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プロペラシャフト総合解析 Ver.3.1</title>
+    <title>プロペラシャフト総合解析 Ver.3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -89,73 +89,96 @@
         /* Tab styling */
         .tab-button {
             padding: 0.5rem 1rem;
-            margin-right: 0.25rem; /* Slightly reduced margin for more tabs */
+            margin-right: 0.25rem;
             border-radius: 0.375rem 0.375rem 0 0;
             cursor: pointer;
-            background-color: #e5e7eb; /* bg-gray-200 */
-            color: #4b5563; /* text-gray-600 */
-            font-weight: 500; /* font-medium */
-            border: 1px solid #d1d5db; /* border-gray-300 */
+            background-color: #e5e7eb; 
+            color: #4b5563; 
+            font-weight: 500; 
+            border: 1px solid #d1d5db; 
             border-bottom: none;
-            font-size: 0.875rem; /* text-sm for tabs */
+            font-size: 0.875rem; 
         }
         .tab-button.active {
             background-color: white;
-            color: #0ea5e9; /* text-sky-600 */
-            border-color: #d1d5db; /* border-gray-300 */
-            border-bottom: 1px solid white; /* Hide bottom border by matching background */
+            color: #0ea5e9; 
+            border-color: #d1d5db; 
+            border-bottom: 1px solid white; 
             position: relative;
-            top: 1px; /* Make it overlap the param-group border */
+            top: 1px; 
+        }
+        /* Language switcher styling */
+        .lang-button {
+            padding: 0.25rem 0.75rem;
+            margin-left: 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            background-color: #d1d5db;
+            color: #374151;
+            font-size: 0.75rem; /* text-xs */
+            border: 1px solid #9ca3af;
+        }
+        .lang-button.active {
+            background-color: #0ea5e9;
+            color: white;
+            border-color: #0c85c7;
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-5xl mx-auto">
-        <h1 class="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">プロペラシャフト総合解析 Ver.3.1</h1>
-
-        <div class="mb-0 -mb-px flex flex-wrap">
-            <button id="tabE46M3" class="tab-button" data-vehicle="E46M3">E46 M3</button>
-            <button id="tabE92M3" class="tab-button" data-vehicle="E92M3">E92 M3</button>
-            <button id="tabR32GTR" class="tab-button" data-vehicle="R32GTR">R32 GT-R</button>
-            <button id="tabR33GTR" class="tab-button" data-vehicle="R33GTR">R33 GT-R</button>
-            <button id="tabR34GTR" class="tab-button" data-vehicle="R34GTR">R34 GT-R</button>
+        <div class="flex justify-between items-center mb-2">
+            <h1 id="appTitle" class="text-2xl md:text-3xl font-bold text-gray-800"></h1>
+            <div>
+                <button id="langJa" class="lang-button" data-lang="ja">日本語</button>
+                <button id="langEn" class="lang-button" data-lang="en">English</button>
+            </div>
         </div>
 
-        <div class="param-group" style="border-top-left-radius: 0; border-top-right-radius: 0;"> <h2 class="section-title">基本設定 (車両固定値)</h2>
+        <div class="mb-0 -mb-px flex flex-wrap">
+            <button id="tabE46M3" class="tab-button" data-vehicle="E46M3" data-i18n-key="tab_E46M3">E46 M3</button>
+            <button id="tabE92M3" class="tab-button" data-vehicle="E92M3" data-i18n-key="tab_E92M3">E92 M3</button>
+            <button id="tabR32GTR" class="tab-button" data-vehicle="R32GTR" data-i18n-key="tab_R32GTR">R32 GT-R</button>
+            <button id="tabR33GTR" class="tab-button" data-vehicle="R33GTR" data-i18n-key="tab_R33GTR">R33 GT-R</button>
+            <button id="tabR34GTR" class="tab-button" data-vehicle="R34GTR" data-i18n-key="tab_R34GTR">R34 GT-R</button>
+        </div>
+
+        <div class="param-group" style="border-top-left-radius: 0; border-top-right-radius: 0;">
+            <h2 id="basicSettingsTitle" class="section-title" data-i18n-key="basicSettingsTitle"></h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                <p class="text-sm text-gray-700">最大エンジン回転数: <span id="fixedMaxEngineRpm" class="fixed-value"></span></p>
-                <p class="text-sm text-gray-700">最速ギア比: <span id="fixedFastestGearRatio" class="fixed-value"></span></p>
-                <p class="text-sm text-gray-700">エンジン最大トルク: <span id="fixedMaxEngineTorque" class="fixed-value"></span></p>
-                <p class="text-sm text-gray-700">1速ギア比: <span id="fixedFirstGearRatio" class="fixed-value"></span></p>
+                <p class="text-sm text-gray-700"><span data-i18n-key="maxEngineRpmLabel"></span> <span id="fixedMaxEngineRpm" class="fixed-value"></span></p>
+                <p class="text-sm text-gray-700"><span data-i18n-key="fastestGearRatioLabel"></span> <span id="fixedFastestGearRatio" class="fixed-value"></span></p>
+                <p class="text-sm text-gray-700"><span data-i18n-key="maxEngineTorqueLabel"></span> <span id="fixedMaxEngineTorque" class="fixed-value"></span></p>
+                <p class="text-sm text-gray-700"><span data-i18n-key="firstGearRatioLabel"></span> <span id="fixedFirstGearRatio" class="fixed-value"></span></p>
             </div>
             <p id="vehicleNote" class="text-xs text-orange-600 mt-2"></p>
         </div>
 
         <div class="param-group">
-            <h2 class="section-title">シャフト構成</h2>
+            <h2 class="section-title" data-i18n-key="shaftConfigTitle"></h2>
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">シャフトタイプ:</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n-key="shaftTypeLabel"></label>
                 <div class="flex space-x-4">
                     <label class="flex items-center">
                         <input type="radio" name="shaftType" value="onePiece" checked class="form-radio h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500">
-                        <span class="ml-2 text-sm text-gray-700">ワンピース</span>
+                        <span class="ml-2 text-sm text-gray-700" data-i18n-key="onePieceLabel"></span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="shaftType" value="twoPiece" class="form-radio h-4 w-4 text-sky-600 border-gray-300 focus:ring-sky-500">
-                        <span class="ml-2 text-sm text-gray-700">ツーピース</span>
+                        <span class="ml-2 text-sm text-gray-700" data-i18n-key="twoPieceLabel"></span>
                     </label>
                 </div>
             </div>
             <div id="twoPieceGlobalParams" class="space-y-3 hidden">
-                 <h3 class="text-md font-semibold text-gray-700 pt-2 border-t">ツーピースシャフト 全体設定</h3>
+                 <h3 class="text-md font-semibold text-gray-700 pt-2 border-t" data-i18n-key="tpGlobalSettingsTitle"></h3>
                  <div class="flex items-center space-x-3">
-                    <label for="tpTotalLength" class="slider-label text-gray-600">総全長 (L<sub>total</sub>):</label>
+                    <label for="tpTotalLength" class="slider-label text-gray-600" data-i18n-key="tpTotalLengthLabel"></label>
                     <input type="range" id="tpTotalLength" min="1000" max="3000" value="2000" step="10">
                     <span id="tpTotalLengthValue" class="value-display">2000 mm</span>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <label for="tpCbPosition" class="slider-label text-gray-600">CB位置 (L1割合):</label>
+                    <label for="tpCbPosition" class="slider-label text-gray-600" data-i18n-key="tpCbPositionLabel"></label>
                     <input type="range" id="tpCbPosition" min="10" max="90" value="50" step="1">
                     <span id="tpCbPositionValue" class="value-display">50 %</span>
                 </div>
@@ -164,50 +187,50 @@
         </div>
 
         <div class="param-group">
-            <h2 class="section-title">シャフト個別寸法設定</h2>
+            <h2 class="section-title" data-i18n-key="shaftIndividualDimTitle"></h2>
             <div id="onePieceParams" class="space-y-3">
-                <h3 class="text-md font-semibold text-gray-700">ワンピースシャフト</h3>
+                <h3 class="text-md font-semibold text-gray-700" data-i18n-key="opShaftTitle"></h3>
                 <div class="flex items-center space-x-3">
-                    <label for="opLength" class="slider-label text-gray-600">全長 (L):</label>
+                    <label for="opLength" class="slider-label text-gray-600" data-i18n-key="opLengthLabel"></label>
                     <input type="range" id="opLength" min="500" max="2500" value="1500" step="10">
                     <span id="opLengthValue" class="value-display">1500 mm</span>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <label for="opDiameter" class="slider-label text-gray-600">外径 (D):</label>
+                    <label for="opDiameter" class="slider-label text-gray-600" data-i18n-key="opDiameterLabel"></label>
                     <input type="range" id="opDiameter" min="20" max="120" value="60">
                     <span id="opDiameterValue" class="value-display">60 mm</span>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <label for="opThickness" class="slider-label text-gray-600">肉厚 (t):</label>
+                    <label for="opThickness" class="slider-label text-gray-600" data-i18n-key="opThicknessLabel"></label>
                     <input type="range" id="opThickness" min="1" max="10" value="3" step="0.1">
                     <span id="opThicknessValue" class="value-display">3.0 mm</span>
                 </div>
             </div>
             <div id="twoPieceParams" class="hidden">
-                 <h3 class="text-md font-semibold text-gray-700 mb-3">ツーピースシャフト (個別)</h3>
+                 <h3 class="text-md font-semibold text-gray-700 mb-3" data-i18n-key="tpShaftIndividualTitle"></h3>
                  <div class="md:grid md:grid-cols-2 md:gap-x-6 space-y-4 md:space-y-0">
                     <div class="space-y-3">
-                        <h4 class="text-sm font-semibold text-gray-600 border-b pb-1">シャフト 1 (前側)</h4>
+                        <h4 class="text-sm font-semibold text-gray-600 border-b pb-1" data-i18n-key="tpShaft1Title"></h4>
                         <div class="flex items-center space-x-3">
-                            <label for="tpD1" class="slider-label text-gray-600">外径 (D1):</label>
+                            <label for="tpD1" class="slider-label text-gray-600" data-i18n-key="tpD1Label"></label>
                             <input type="range" id="tpD1" min="20" max="120" value="60">
                             <span id="tpD1Value" class="value-display">60 mm</span>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <label for="tpT1" class="slider-label text-gray-600">肉厚 (t1):</label>
+                            <label for="tpT1" class="slider-label text-gray-600" data-i18n-key="tpT1Label"></label>
                             <input type="range" id="tpT1" min="1" max="10" value="3" step="0.1">
                             <span id="tpT1Value" class="value-display">3.0 mm</span>
                         </div>
                     </div>
                     <div class="space-y-3">
-                        <h4 class="text-sm font-semibold text-gray-600 border-b pb-1">シャフト 2 (後側)</h4>
+                        <h4 class="text-sm font-semibold text-gray-600 border-b pb-1" data-i18n-key="tpShaft2Title"></h4>
                         <div class="flex items-center space-x-3">
-                            <label for="tpD2" class="slider-label text-gray-600">外径 (D2):</label>
+                            <label for="tpD2" class="slider-label text-gray-600" data-i18n-key="tpD2Label"></label>
                             <input type="range" id="tpD2" min="20" max="120" value="60">
                             <span id="tpD2Value" class="value-display">60 mm</span>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <label for="tpT2" class="slider-label text-gray-600">肉厚 (t2):</label>
+                            <label for="tpT2" class="slider-label text-gray-600" data-i18n-key="tpT2Label"></label>
                             <input type="range" id="tpT2" min="1" max="10" value="3" step="0.1">
                             <span id="tpT2Value" class="value-display">3.0 mm</span>
                         </div>
@@ -217,16 +240,16 @@
         </div>
 
         <div class="results-group">
-            <h2 class="section-title">計算結果指標</h2>
+            <h2 class="section-title" data-i18n-key="resultsTitle"></h2>
             <div class="results-card mb-4">
-                <h3 class="text-md font-semibold text-gray-700 mb-2">プロペラシャフト基本情報</h3>
+                <h3 class="text-md font-semibold text-gray-700 mb-2" data-i18n-key="propshaftBasicInfoTitle"></h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 result-item">
-                    <p>最大想定プロペラシャフト回転数: <strong id="maxPropshaftRpm">-.-- RPM</strong></p>
-                    <p>最大想定プロペラシャフトトルク: <strong id="maxPropshaftTorque">-.-- Nm</strong></p>
+                    <p><span data-i18n-key="maxPropshaftRpmLabel"></span> <strong id="maxPropshaftRpm">-.-- RPM</strong></p>
+                    <p><span data-i18n-key="maxPropshaftTorqueLabel"></span> <strong id="maxPropshaftTorque">-.-- Nm</strong></p>
                 </div>
             </div>
             <div id="onePieceResultsDisplay" class="results-card">
-                <h3 class="text-md font-semibold text-gray-700 mb-2">ワンピースシャフト 解析結果</h3>
+                <h3 class="text-md font-semibold text-gray-700 mb-2" data-i18n-key="opAnalysisResultsTitle"></h3>
                 <div id="opResultsContent" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 result-item"></div>
                 <p id="opOverallErrorMessage" class="text-xs text-red-600 mt-2"></p>
                 <div class="chart-container">
@@ -236,12 +259,12 @@
             <div id="twoPieceResultsDisplay" class="hidden">
                 <div class="md:grid md:grid-cols-2 md:gap-x-6">
                     <div class="results-card mb-3 md:mb-0">
-                        <h3 class="text-md font-semibold text-gray-700 mb-2">シャフト1 解析結果</h3>
+                        <h3 class="text-md font-semibold text-gray-700 mb-2" data-i18n-key="tpShaft1AnalysisTitle"></h3>
                         <div id="tpS1ResultsContent" class="grid grid-cols-1 gap-y-3 result-item"></div>
                         <p id="tpS1ErrorMessage" class="text-xs text-red-600 mt-2"></p>
                     </div>
                     <div class="results-card">
-                        <h3 class="text-md font-semibold text-gray-700 mb-2">シャフト2 解析結果</h3>
+                        <h3 class="text-md font-semibold text-gray-700 mb-2" data-i18n-key="tpShaft2AnalysisTitle"></h3>
                         <div id="tpS2ResultsContent" class="grid grid-cols-1 gap-y-3 result-item"></div>
                          <p id="tpS2ErrorMessage" class="text-xs text-red-600 mt-2"></p>
                     </div>
@@ -250,30 +273,30 @@
                     <canvas id="twoPieceEnergyChart"></canvas>
                 </div>
                 <div class="results-card mt-4">
-                    <h3 class="text-md font-semibold text-gray-700 mb-2">ツーピースシャフト システム全体解析</h3>
+                    <h3 class="text-md font-semibold text-gray-700 mb-2" data-i18n-key="tpSystemAnalysisTitle"></h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 result-item">
-                        <p>システム最小危険回転数 (N<sub>c,sys</sub>): <strong id="tpSystemCriticalSpeed">-.-- RPM</strong></p>
-                        <p>安全上限回転数 (0.7 * N<sub>c,sys</sub>): <strong id="tpSystemSafeRpm">-.-- RPM</strong></p>
-                        <p>ステータス (危険回転数): <span id="tpSystemCritStatus" class="">計算中...</span></p>
-                        <p>総慣性モーメント: <strong id="tpTotalInertia">-.-- kg·m²</strong></p>
+                        <p><span data-i18n-key="systemMinCritSpeedLabel"></span> <strong id="tpSystemCriticalSpeed">-.-- RPM</strong></p>
+                        <p><span data-i18n-key="safeUpperRpmLabel"></span> <strong id="tpSystemSafeRpm">-.-- RPM</strong></p>
+                        <p><span data-i18n-key="statusCritSpeedLabel"></span> <span id="tpSystemCritStatus" class=""></span></p>
+                        <p><span data-i18n-key="totalInertiaLabel"></span> <strong id="tpTotalInertia">-.-- kg·m²</strong></p>
                     </div>
                 </div>
             </div>
              <div class="bg-yellow-50 p-3 rounded-md border border-yellow-200 mt-4 text-xs text-yellow-800">
-                <strong>注記:</strong> 計算は鋼材(ヤング率207GPa, 密度7850kg/m³, 降伏応力235MPa, ねじり安全率2.0)、両端単純支持を前提とした簡略モデルです。実際の設計ではより詳細な解析が必要です。グラフの回転運動エネルギーは、各ギア比におけるプロペラシャフト全体のエネルギーを示します。<span id="additionalVehicleNote"></span>
+                <strong data-i18n-key="noteTitle"></strong> <span data-i18n-key="noteContent1"></span><span id="additionalVehicleNote"></span> <span data-i18n-key="noteContent2"></span>
              </div>
         </div>
     </div>
 
     <script>
         // --- 定数 ---
-        const E_STEEL = 207e9; // Pa (N/m^2) - ヤング率
-        const RHO_STEEL = 7850; // kg/m^3 - 密度
-        const SIGMA_Y_STEEL = 235e6; // Pa - 鋼の降伏応力 (SS400相当)
-        const SHEAR_YIELD_FACTOR = 1 / Math.sqrt(3); // 約0.577 (ミーゼス)
-        const TAU_Y_STEEL = SIGMA_Y_STEEL * SHEAR_YIELD_FACTOR; // Pa - せん断降伏応力
-        const SAFETY_FACTOR_TORSION = 2.0; // ねじりに対する安全率
-        const TAU_A_STEEL = TAU_Y_STEEL / SAFETY_FACTOR_TORSION; // Pa - 許容せん断応力
+        const E_STEEL = 207e9; 
+        const RHO_STEEL = 7850; 
+        const SIGMA_Y_STEEL = 235e6; 
+        const SHEAR_YIELD_FACTOR = 1 / Math.sqrt(3); 
+        const TAU_Y_STEEL = SIGMA_Y_STEEL * SHEAR_YIELD_FACTOR; 
+        const SAFETY_FACTOR_TORSION = 2.0; 
+        const TAU_A_STEEL = TAU_Y_STEEL / SAFETY_FACTOR_TORSION; 
         
         const ENGINE_RPM_MIN_FOR_GRAPH = 1000;
         const RPM_STEP_FOR_GRAPH = 500;
@@ -287,113 +310,182 @@
                 maxEngineTorque: 365,
                 firstGearRatio: 4.227,
                 graphGearRatios: [
-                    { name: '1速', value: 4.227, color: 'rgb(239, 68, 68)' },
-                    { name: '2速', value: 2.528, color: 'rgb(249, 115, 22)' },
-                    { name: '3速', value: 1.669, color: 'rgb(234, 179, 8)' },
-                    { name: '4速', value: 1.226, color: 'rgb(132, 204, 22)' },
-                    { name: '5速', value: 1.000, color: 'rgb(16, 185, 129)' },
-                    { name: '6速', value: 0.828, color: 'rgb(59, 130, 246)' }
+                    { name: '1st', value: 4.227, color: 'rgb(239, 68, 68)' }, { name: '2nd', value: 2.528, color: 'rgb(249, 115, 22)' },
+                    { name: '3rd', value: 1.669, color: 'rgb(234, 179, 8)' },  { name: '4th', value: 1.226, color: 'rgb(132, 204, 22)' },
+                    { name: '5th', value: 1.000, color: 'rgb(16, 185, 129)' }, { name: '6th', value: 0.828, color: 'rgb(59, 130, 246)' }
                 ],
-                note: "E46 M3の数値は一般的な6MTモデルに基づきます。"
+                note_key: "note_E46M3"
             },
             E92M3: {
                 name: "E92 M3",
-                maxEngineRpm: 8300, // Updated
+                maxEngineRpm: 8300,
                 fastestGearRatio: 0.872,
-                maxEngineTorque: 400, // Updated
+                maxEngineTorque: 400,
                 firstGearRatio: 4.055,
                 graphGearRatios: [
-                    { name: '1速', value: 4.055, color: 'rgb(239, 68, 68)' },
-                    { name: '2速', value: 2.369, color: 'rgb(249, 115, 22)' },
-                    { name: '3速', value: 1.582, color: 'rgb(234, 179, 8)' },
-                    { name: '4速', value: 1.192, color: 'rgb(132, 204, 22)' },
-                    { name: '5速', value: 1.000, color: 'rgb(16, 185, 129)' },
-                    { name: '6速', value: 0.872, color: 'rgb(59, 130, 246)' }
+                    { name: '1st', value: 4.055, color: 'rgb(239, 68, 68)' }, { name: '2nd', value: 2.369, color: 'rgb(249, 115, 22)' },
+                    { name: '3rd', value: 1.582, color: 'rgb(234, 179, 8)' },  { name: '4th', value: 1.192, color: 'rgb(132, 204, 22)' },
+                    { name: '5th', value: 1.000, color: 'rgb(16, 185, 129)' }, { name: '6th', value: 0.872, color: 'rgb(59, 130, 246)' }
                 ],
-                note: ""
+                note_key: "note_E92M3"
             },
             R32GTR: {
                 name: "R32 GT-R",
-                maxEngineRpm: 8000,
+                maxEngineRpm: 8000, // Updated
                 fastestGearRatio: 0.752,
-                maxEngineTorque: 353, // Updated
+                maxEngineTorque: 353,
                 firstGearRatio: 3.214,
                 graphGearRatios: [
-                    { name: '1速', value: 3.214, color: 'rgb(239, 68, 68)' },
-                    { name: '2速', value: 1.925, color: 'rgb(249, 115, 22)' },
-                    { name: '3速', value: 1.302, color: 'rgb(234, 179, 8)' },
-                    { name: '4速', value: 1.000, color: 'rgb(132, 204, 22)' },
-                    { name: '5速', value: 0.752, color: 'rgb(16, 185, 129)' }
+                    { name: '1st', value: 3.214, color: 'rgb(239, 68, 68)' }, { name: '2nd', value: 1.925, color: 'rgb(249, 115, 22)' },
+                    { name: '3rd', value: 1.302, color: 'rgb(234, 179, 8)' },  { name: '4th', value: 1.000, color: 'rgb(132, 204, 22)' },
+                    { name: '5th', value: 0.752, color: 'rgb(16, 185, 129)' }
                 ],
-                note: "R32 GT-Rの最大エンジン回転数・トルクは一般的な値を参照しています。"
+                note_key: "note_R32GTR"
             },
             R33GTR: {
                 name: "R33 GT-R",
-                maxEngineRpm: 8000, // Official, can be higher
-                fastestGearRatio: 0.752, // Assuming same 5-speed as R32
+                maxEngineRpm: 8000, // Updated
+                fastestGearRatio: 0.752, 
                 maxEngineTorque: 368,
-                firstGearRatio: 3.214, // Assuming same 5-speed as R32
+                firstGearRatio: 3.214, 
                 graphGearRatios: [
-                    { name: '1速', value: 3.214, color: 'rgb(239, 68, 68)' },
-                    { name: '2速', value: 1.925, color: 'rgb(249, 115, 22)' },
-                    { name: '3速', value: 1.302, color: 'rgb(234, 179, 8)' },
-                    { name: '4速', value: 1.000, color: 'rgb(132, 204, 22)' },
-                    { name: '5速', value: 0.752, color: 'rgb(16, 185, 129)' }
+                    { name: '1st', value: 3.214, color: 'rgb(239, 68, 68)' }, { name: '2nd', value: 1.925, color: 'rgb(249, 115, 22)' },
+                    { name: '3rd', value: 1.302, color: 'rgb(234, 179, 8)' },  { name: '4th', value: 1.000, color: 'rgb(132, 204, 22)' },
+                    { name: '5th', value: 0.752, color: 'rgb(16, 185, 129)' }
                 ],
-                note: "R33 GT-Rの最大エンジン回転数・トルクは標準的な値を参照。5MTを想定。"
+                note_key: "note_R33GTR"
             },
             R34GTR: {
                 name: "R34 GT-R",
-                maxEngineRpm: 8000, // Common enthusiast redline, official is lower
+                maxEngineRpm: 8000, // Updated
                 fastestGearRatio: 0.793,
                 maxEngineTorque: 392,
                 firstGearRatio: 3.827,
                 graphGearRatios: [
-                    { name: '1速', value: 3.827, color: 'rgb(239, 68, 68)' },
-                    { name: '2速', value: 2.360, color: 'rgb(249, 115, 22)' },
-                    { name: '3速', value: 1.685, color: 'rgb(234, 179, 8)' },
-                    { name: '4速', value: 1.312, color: 'rgb(132, 204, 22)' },
-                    { name: '5速', value: 1.000, color: 'rgb(16, 185, 129)' },
-                    { name: '6速', value: 0.793, color: 'rgb(59, 130, 246)' }
+                    { name: '1st', value: 3.827, color: 'rgb(239, 68, 68)' }, { name: '2nd', value: 2.360, color: 'rgb(249, 115, 22)' },
+                    { name: '3rd', value: 1.685, color: 'rgb(234, 179, 8)' },  { name: '4th', value: 1.312, color: 'rgb(132, 204, 22)' },
+                    { name: '5th', value: 1.000, color: 'rgb(16, 185, 129)' }, { name: '6th', value: 0.793, color: 'rgb(59, 130, 246)' }
                 ],
-                note: "R34 GT-Rの最大エンジン回転数は一般的なチューニング値を参照。トルクは標準的な値。"
+                note_key: "note_R34GTR"
             }
         };
-        let currentVehicleModelKey = 'E46M3'; // Default vehicle (first in new order)
+        let currentVehicleModelKey = 'E46M3'; 
+        let currentLang = 'ja'; // Default language
 
-        // --- DOM 要素 ---
-        const tabButtons = { // Store tab buttons for easier access
-            E46M3: document.getElementById('tabE46M3'),
-            E92M3: document.getElementById('tabE92M3'),
-            R32GTR: document.getElementById('tabR32GTR'),
-            R33GTR: document.getElementById('tabR33GTR'),
+        // --- i18n Strings ---
+        const i18n = {
+            ja: {
+                appTitle: "プロペラシャフト総合解析 Ver.3.2",
+                tab_E46M3: "E46 M3", tab_E92M3: "E92 M3", tab_R32GTR: "R32 GT-R", tab_R33GTR: "R33 GT-R", tab_R34GTR: "R34 GT-R",
+                basicSettingsTitle: "基本設定 (車両固定値)",
+                maxEngineRpmLabel: "最大エンジン回転数:", fastestGearRatioLabel: "最速ギア比:",
+                maxEngineTorqueLabel: "エンジン最大トルク:", firstGearRatioLabel: "1速ギア比:",
+                shaftConfigTitle: "シャフト構成", shaftTypeLabel: "シャフトタイプ:",
+                onePieceLabel: "ワンピース", twoPieceLabel: "ツーピース",
+                tpGlobalSettingsTitle: "ツーピースシャフト 全体設定",
+                tpTotalLengthLabel: "総全長 (L<sub>total</sub>):", tpCbPositionLabel: "CB位置 (L1割合):",
+                shaftIndividualDimTitle: "シャフト個別寸法設定",
+                opShaftTitle: "ワンピースシャフト", opLengthLabel: "全長 (L):", opDiameterLabel: "外径 (D):", opThicknessLabel: "肉厚 (t):",
+                tpShaftIndividualTitle: "ツーピースシャフト (個別)",
+                tpShaft1Title: "シャフト 1 (前側)", tpD1Label: "外径 (D1):", tpT1Label: "肉厚 (t1):",
+                tpShaft2Title: "シャフト 2 (後側)", tpD2Label: "外径 (D2):", tpT2Label: "肉厚 (t2):",
+                resultsTitle: "計算結果指標",
+                propshaftBasicInfoTitle: "プロペラシャフト基本情報",
+                maxPropshaftRpmLabel: "最大想定プロペラシャフト回転数:", maxPropshaftTorqueLabel: "最大想定プロペラシャフトトルク:",
+                opAnalysisResultsTitle: "ワンピースシャフト 解析結果",
+                tpShaft1AnalysisTitle: "シャフト1 解析結果", tpShaft2AnalysisTitle: "シャフト2 解析結果",
+                tpSystemAnalysisTitle: "ツーピースシャフト システム全体解析",
+                systemMinCritSpeedLabel: "システム最小危険回転数 (N<sub>c,sys</sub>):",
+                safeUpperRpmLabel: "安全上限回転数 (0.7*N<sub>c,sys</sub>):",
+                statusCritSpeedLabel: "ステータス (危険回転数):", totalInertiaLabel: "総慣性モーメント:",
+                noteTitle: "注記:",
+                noteContent1: "計算は鋼材(ヤング率207GPa, 密度7850kg/m³, 降伏応力235MPa, ねじり安全率2.0)、両端単純支持を前提とした簡略モデルです。実際の設計ではより詳細な解析が必要です。グラフの回転運動エネルギーは、各ギア比におけるプロペラシャフト全体のエネルギーを示します。",
+                noteContent2: "", // Placeholder for any text after vehicle specific note
+                note_E46M3: "E46 M3の数値は一般的な6MTモデルに基づきます。",
+                note_E92M3: "",
+                note_R32GTR: "R32 GT-Rのトルクは一般的な値を参照しています。",
+                note_R33GTR: "R33 GT-Rのトルクは標準的な値を参照。5MTを想定。",
+                note_R34GTR: "R34 GT-Rのトルクは標準的な値を参照。",
+                status_ok: "OK (安全域)", status_warning_zone: "注意 (安全域超過: {percent}%)",
+                status_danger_crit: "危険 (危険回転数超過)",
+                status_torsion_ok: "OK (安全率 {sf})", status_torsion_warning: "注意 (目標安全率未満: {sf})",
+                status_torsion_danger: "強度不足 (安全率 {sf})",
+                status_calculating: "計算中...", status_error_calc: "計算不可", status_error_dim: "寸法エラーにより計算できません。",
+                error_thickness_dia: "肉厚が大きすぎるか、外径が小さすぎます。", error_positive_dims: "寸法は正の値である必要があります。",
+                shaft1_label: "シャフト1", shaft2_label: "シャフト2", one_piece_shaft_label: "ワンピースシャフト",
+                chart_engine_rpm_axis: "エンジン回転数 (RPM)", chart_energy_axis: "回転運動エネルギー (J)",
+                gear_label_suffix: "速"
+            },
+            en: {
+                appTitle: "Propeller Shaft Comprehensive Analysis Ver.3.2",
+                tab_E46M3: "E46 M3", tab_E92M3: "E92 M3", tab_R32GTR: "R32 GT-R", tab_R33GTR: "R33 GT-R", tab_R34GTR: "R34 GT-R",
+                basicSettingsTitle: "Basic Settings (Vehicle Fixed Values)",
+                maxEngineRpmLabel: "Max Engine RPM:", fastestGearRatioLabel: "Fastest Gear Ratio:",
+                maxEngineTorqueLabel: "Max Engine Torque:", firstGearRatioLabel: "1st Gear Ratio:",
+                shaftConfigTitle: "Shaft Configuration", shaftTypeLabel: "Shaft Type:",
+                onePieceLabel: "One-Piece", twoPieceLabel: "Two-Piece",
+                tpGlobalSettingsTitle: "Two-Piece Shaft Global Settings",
+                tpTotalLengthLabel: "Total Length (L<sub>total</sub>):", tpCbPositionLabel: "CB Position (L1 %):",
+                shaftIndividualDimTitle: "Individual Shaft Dimensions",
+                opShaftTitle: "One-Piece Shaft", opLengthLabel: "Length (L):", opDiameterLabel: "Outer Dia. (D):", opThicknessLabel: "Thickness (t):",
+                tpShaftIndividualTitle: "Two-Piece Shaft (Individual)",
+                tpShaft1Title: "Shaft 1 (Front)", tpD1Label: "Outer Dia. (D1):", tpT1Label: "Thickness (t1):",
+                tpShaft2Title: "Shaft 2 (Rear)", tpD2Label: "Outer Dia. (D2):", tpT2Label: "Thickness (t2):",
+                resultsTitle: "Calculation Results",
+                propshaftBasicInfoTitle: "Propshaft Basic Info",
+                maxPropshaftRpmLabel: "Max Propshaft RPM:", maxPropshaftTorqueLabel: "Max Propshaft Torque:",
+                opAnalysisResultsTitle: "One-Piece Shaft Analysis",
+                tpShaft1AnalysisTitle: "Shaft 1 Analysis", tpShaft2AnalysisTitle: "Shaft 2 Analysis",
+                tpSystemAnalysisTitle: "Two-Piece Shaft System Analysis",
+                systemMinCritSpeedLabel: "System Min. Critical Speed (N<sub>c,sys</sub>):",
+                safeUpperRpmLabel: "Safe Upper RPM (0.7*N<sub>c,sys</sub>):",
+                statusCritSpeedLabel: "Status (Critical Speed):", totalInertiaLabel: "Total Inertia:",
+                noteTitle: "Note:",
+                noteContent1: "Calculations are based on a simplified model assuming steel (Young's Modulus 207GPa, Density 7850kg/m³, Yield Strength 235MPa, Torsion Safety Factor 2.0) and simply supported ends. Detailed analysis is required for actual design. Rotational kinetic energy in the graph shows the total energy for the propshaft at each gear ratio. ",
+                noteContent2: "",
+                note_E46M3: "E46 M3 values are based on common 6MT models.",
+                note_E92M3: "",
+                note_R32GTR: "R32 GT-R torque is a general reference value.",
+                note_R33GTR: "R33 GT-R torque is a standard reference. Assumes 5MT.",
+                note_R34GTR: "R34 GT-R torque is a standard reference.",
+                status_ok: "OK (Safe Range)", status_warning_zone: "Caution (Exceeds Safe Range: {percent}%)",
+                status_danger_crit: "Danger (Exceeds Critical Speed)",
+                status_torsion_ok: "OK (Safety Factor {sf})", status_torsion_warning: "Caution (Below Target SF: {sf})",
+                status_torsion_danger: "Insufficient Strength (SF {sf})",
+                status_calculating: "Calculating...", status_error_calc: "Cannot Calculate", status_error_dim: "Dimension error, cannot calculate.",
+                error_thickness_dia: "Thickness too large or diameter too small.", error_positive_dims: "Dimensions must be positive values.",
+                shaft1_label: "Shaft 1", shaft2_label: "Shaft 2", one_piece_shaft_label: "One-Piece Shaft",
+                chart_engine_rpm_axis: "Engine RPM", chart_energy_axis: "Rotational Kinetic Energy (J)",
+                gear_label_suffix: "th Gear" // Or handle 1st, 2nd, 3rd specifically if needed
+            }
+        };
+
+        // --- DOM 要素 (一部変更なし) ---
+        const langJaButton = document.getElementById('langJa');
+        const langEnButton = document.getElementById('langEn');
+        const tabButtons = { 
+            E46M3: document.getElementById('tabE46M3'), E92M3: document.getElementById('tabE92M3'),
+            R32GTR: document.getElementById('tabR32GTR'), R33GTR: document.getElementById('tabR33GTR'),
             R34GTR: document.getElementById('tabR34GTR')
         };
         const vehicleNoteSpan = document.getElementById('vehicleNote');
         const additionalVehicleNoteSpan = document.getElementById('additionalVehicleNote');
-
-
         const shaftTypeRadios = document.querySelectorAll('input[name="shaftType"]');
         const onePieceParamsDiv = document.getElementById('onePieceParams');
         const twoPieceParamsDiv = document.getElementById('twoPieceParams');
         const twoPieceGlobalParamsDiv = document.getElementById('twoPieceGlobalParams');
         const onePieceResultsDisplayDiv = document.getElementById('onePieceResultsDisplay');
         const twoPieceResultsDisplayDiv = document.getElementById('twoPieceResultsDisplay');
-
-        // Fixed Basic Settings Display Spans
         const fixedMaxEngineRpmSpan = document.getElementById('fixedMaxEngineRpm');
         const fixedFastestGearRatioSpan = document.getElementById('fixedFastestGearRatio');
         const fixedMaxEngineTorqueSpan = document.getElementById('fixedMaxEngineTorque');
         const fixedFirstGearRatioSpan = document.getElementById('fixedFirstGearRatio');
-
-        // Sliders and their value displays
         const opLengthSlider = document.getElementById('opLength');
         const opDiameterSlider = document.getElementById('opDiameter');
         const opThicknessSlider = document.getElementById('opThickness');
         const opLengthValueSpan = document.getElementById('opLengthValue');
         const opDiameterValueSpan = document.getElementById('opDiameterValue');
         const opThicknessValueSpan = document.getElementById('opThicknessValue');
-
         const tpTotalLengthSlider = document.getElementById('tpTotalLength');
         const tpCbPositionSlider = document.getElementById('tpCbPosition');
         const tpD1Slider = document.getElementById('tpD1');
@@ -408,16 +500,10 @@
         const tpT1ValueSpan = document.getElementById('tpT1Value');
         const tpD2ValueSpan = document.getElementById('tpD2Value');
         const tpT2ValueSpan = document.getElementById('tpT2Value');
-
-        // Results Displays (Global)
         const maxPropshaftRpmSpan = document.getElementById('maxPropshaftRpm');
         const maxPropshaftTorqueSpan = document.getElementById('maxPropshaftTorque');
-
-        // Results Displays (One-Piece)
         const opResultsContentDiv = document.getElementById('opResultsContent');
         const opOverallErrorMessageSpan = document.getElementById('opOverallErrorMessage');
-
-        // Results Displays (Two-Piece)
         const tpS1ResultsContentDiv = document.getElementById('tpS1ResultsContent');
         const tpS2ResultsContentDiv = document.getElementById('tpS2ResultsContent');
         const tpS1ErrorMessageSpan = document.getElementById('tpS1ErrorMessage');
@@ -426,16 +512,47 @@
         const tpSystemSafeRpmSpan = document.getElementById('tpSystemSafeRpm');
         const tpSystemCritStatusSpan = document.getElementById('tpSystemCritStatus');
         const tpTotalInertiaSpan = document.getElementById('tpTotalInertia');
-
-        // Chart instances
         let onePieceEnergyChart = null;
         let twoPieceEnergyChart = null;
         const onePieceChartCtx = document.getElementById('onePieceEnergyChart').getContext('2d');
         const twoPieceChartCtx = document.getElementById('twoPieceEnergyChart').getContext('2d');
 
+        // --- 言語切り替え機能 ---
+        function updateTexts() {
+            const texts = i18n[currentLang];
+            document.querySelectorAll('[data-i18n-key]').forEach(el => {
+                const key = el.getAttribute('data-i18n-key');
+                if (texts[key]) {
+                    el.innerHTML = texts[key]; // Use innerHTML to support <sub> tags in labels
+                }
+            });
+            // Update dynamic texts like notes, chart titles if needed (done in their respective functions)
+            updateFixedParamsDisplay(); // Re-render fixed params with new lang
+             // Update tab display names
+            Object.keys(tabButtons).forEach(key => {
+                if (tabButtons[key]) {
+                    tabButtons[key].textContent = texts[`tab_${key}`] || VEHICLE_PARAMS[key].name;
+                }
+            });
+            performCalculations(); // Recalculate to update status messages in new lang
+        }
+
+        langJaButton.addEventListener('click', () => {
+            currentLang = 'ja';
+            langJaButton.classList.add('active');
+            langEnButton.classList.remove('active');
+            updateTexts();
+        });
+        langEnButton.addEventListener('click', () => {
+            currentLang = 'en';
+            langEnButton.classList.add('active');
+            langJaButton.classList.remove('active');
+            updateTexts();
+        });
+        
         // --- イベントリスナー ---
         Object.keys(tabButtons).forEach(key => {
-            if (tabButtons[key]) { // Check if tab button exists
+            if (tabButtons[key]) { 
                 tabButtons[key].addEventListener('click', () => switchVehicleModel(key));
             }
         });
@@ -453,26 +570,30 @@
                     tabButtons[key].classList.toggle('active', key === modelKey);
                 }
             });
-            updateFixedParamsDisplay();
-            performCalculations();
+            updateFixedParamsDisplay(); // This will also trigger performCalculations via updateTexts
         }
 
         function updateFixedParamsDisplay() {
             const params = VEHICLE_PARAMS[currentVehicleModelKey];
+            const texts = i18n[currentLang];
             fixedMaxEngineRpmSpan.textContent = `${params.maxEngineRpm} RPM`;
             fixedFastestGearRatioSpan.textContent = params.fastestGearRatio.toFixed(3);
             fixedMaxEngineTorqueSpan.textContent = `${params.maxEngineTorque} Nm`;
             fixedFirstGearRatioSpan.textContent = params.firstGearRatio.toFixed(3);
-            vehicleNoteSpan.textContent = params.note || "";
-            additionalVehicleNoteSpan.textContent = params.note || ""; 
+            vehicleNoteSpan.textContent = texts[params.note_key] || params.note || "";
+            additionalVehicleNoteSpan.textContent = texts[params.note_key] || params.note || ""; 
+            // After updating fixed params, call updateTexts to ensure all static labels are correct for the new language.
+            // However, to avoid infinite loops if updateTexts calls this, we only call performCalculations from here.
+            // The main language switch will handle the full text update.
+            performCalculations();
         }
-
 
         // --- 計算関数 (内容は変更なし) ---
         function calculateShaftProperties(D_m, t_m, L_m) {
-            if (D_m <= 0 || t_m <= 0 || L_m <= 0) return { mass: null, inertia: null, Zp: null, error: "寸法は正の値である必要があります。" };
+            const texts = i18n[currentLang];
+            if (D_m <= 0 || t_m <= 0 || L_m <= 0) return { mass: null, inertia: null, Zp: null, error: texts.error_positive_dims };
             const d_m = D_m - 2 * t_m;
-            if (d_m <= 0) return { mass: null, inertia: null, Zp: null, error: "肉厚が大きすぎるか、外径が小さすぎます。" };
+            if (d_m <= 0) return { mass: null, inertia: null, Zp: null, error: texts.error_thickness_dia };
 
             const R_m = D_m / 2;
             const r_m = d_m / 2;
@@ -547,49 +668,61 @@
             performCalculations();
         }
 
-        function renderShaftResults(contentDiv, shaftName, props, Nc, safeNc, T_allow, maxShaftRpmForEnergyCalc, maxShaftTorqueForStrength, errorMsgSpan, errorText) {
+        function renderShaftResults(contentDiv, shaftNameKey, props, Nc, safeNc, T_allow, maxShaftRpmForEnergyCalc, maxShaftTorqueForStrength, errorMsgSpan, errorText) {
+            const texts = i18n[currentLang];
             contentDiv.innerHTML = ''; 
             errorMsgSpan.textContent = '';
+            const shaftDisplayName = texts[shaftNameKey] || shaftNameKey;
+
 
             if (errorText) {
-                errorMsgSpan.textContent = `${shaftName}: ${errorText}`;
+                errorMsgSpan.textContent = `${shaftDisplayName}: ${errorText}`;
                 return;
             }
             if (!props || props.inertia === null) {
-                 errorMsgSpan.textContent = `${shaftName}: 寸法エラーにより計算できません。`;
+                 errorMsgSpan.textContent = `${shaftDisplayName}: ${texts.status_error_dim}`;
                  return;
             }
             const torsionSafetyFactor = (T_allow && maxShaftTorqueForStrength && maxShaftTorqueForStrength > 0) ? (T_allow / maxShaftTorqueForStrength) : null;
 
             let critStatusClass = '';
-            let critStatusText = '計算不可';
+            let critStatusText = texts.status_error_calc;
             if (Nc !== null && safeNc !== null && !isNaN(maxShaftRpmForEnergyCalc)) {
-                if (maxShaftRpmForEnergyCalc <= safeNc) { critStatusText = 'OK (安全域)'; critStatusClass = 'status-ok'; }
-                else if (maxShaftRpmForEnergyCalc <= Nc) { critStatusText = `注意 (安全域超過: ${(maxShaftRpmForEnergyCalc / Nc * 100).toFixed(0)}%)`; critStatusClass = 'status-warning'; }
-                else { critStatusText = '危険 (危険回転数超過)'; critStatusClass = 'status-danger'; }
+                if (maxShaftRpmForEnergyCalc <= safeNc) { critStatusText = texts.status_ok; critStatusClass = 'status-ok'; }
+                else if (maxShaftRpmForEnergyCalc <= Nc) { critStatusText = texts.status_warning_zone.replace('{percent}', (maxShaftRpmForEnergyCalc / Nc * 100).toFixed(0)); critStatusClass = 'status-warning'; }
+                else { critStatusText = texts.status_danger_crit; critStatusClass = 'status-danger'; }
             }
             
             let torsionStatusClass = '';
-            let torsionStatusText = '計算不可';
+            let torsionStatusText = texts.status_error_calc;
             if (torsionSafetyFactor !== null) {
-                if (torsionSafetyFactor >= SAFETY_FACTOR_TORSION) { torsionStatusText = `OK (安全率 ${torsionSafetyFactor.toFixed(2)})`; torsionStatusClass = 'status-ok'; }
-                else if (torsionSafetyFactor > 1.0) { torsionStatusText = `注意 (目標安全率未満: ${torsionSafetyFactor.toFixed(2)})`; torsionStatusClass = 'status-warning'; }
-                else { torsionStatusText = `強度不足 (安全率 ${torsionSafetyFactor.toFixed(2)})`; torsionStatusClass = 'status-danger'; }
+                if (torsionSafetyFactor >= SAFETY_FACTOR_TORSION) { torsionStatusText = texts.status_torsion_ok.replace('{sf}', torsionSafetyFactor.toFixed(2)); torsionStatusClass = 'status-ok'; }
+                else if (torsionSafetyFactor > 1.0) { torsionStatusText = texts.status_torsion_warning.replace('{sf}', torsionSafetyFactor.toFixed(2)); torsionStatusClass = 'status-warning'; }
+                else { torsionStatusText = texts.status_torsion_danger.replace('{sf}', torsionSafetyFactor.toFixed(2)); torsionStatusClass = 'status-danger'; }
             }
 
             contentDiv.innerHTML = `
-                <p>慣性モーメント: <strong>${props.inertia !== null ? props.inertia.toFixed(4) : '-.--'} kg·m²</strong></p>
-                <p>極断面係数 (Z<sub>p</sub>): <strong>${props.Zp !== null ? (props.Zp * 1e9).toFixed(1) : '-.--'} mm³</strong></p>
-                <p>許容トルク (T<sub>allow</sub>): <strong>${T_allow !== null ? T_allow.toFixed(1) : '-.--'} Nm</strong></p>
-                <p>ねじり安全率 (S<sub>f</sub>): <strong>${torsionSafetyFactor !== null ? torsionSafetyFactor.toFixed(2) : '-.--'}</strong></p>
-                <p>ステータス (ねじり強度): <span class="${torsionStatusClass}">${torsionStatusText}</span></p>
-                <p>危険回転数 (N<sub>c</sub>): <strong>${Nc !== null ? Nc.toFixed(0) : '-.--'} RPM</strong></p>
-                <p>安全上限回転数 (0.7*N<sub>c</sub>): <strong>${safeNc !== null ? safeNc.toFixed(0) : '-.--'} RPM</strong></p>
-                <p>ステータス (危険回転数): <span class="${critStatusClass}">${critStatusText}</span></p>
+                <p>${texts.totalInertiaLabel || '慣性モーメント'}: <strong>${props.inertia !== null ? props.inertia.toFixed(4) : '-.--'} kg·m²</strong></p>
+                <p>${texts.polarSectionModulusLabel || '極断面係数 (Zp)'}: <strong>${props.Zp !== null ? (props.Zp * 1e9).toFixed(1) : '-.--'} mm³</strong></p>
+                <p>${texts.allowableTorqueLabel || '許容トルク (Tallow)'}: <strong>${T_allow !== null ? T_allow.toFixed(1) : '-.--'} Nm</strong></p>
+                <p>${texts.torsionSafetyFactorLabel || 'ねじり安全率 (Sf)'}: <strong>${torsionSafetyFactor !== null ? torsionSafetyFactor.toFixed(2) : '-.--'}</strong></p>
+                <p>${texts.statusTorsionLabel || 'ステータス (ねじり強度)'}: <span class="${torsionStatusClass}">${torsionStatusText}</span></p>
+                <p>${texts.criticalSpeedLabel || '危険回転数 (Nc)'}: <strong>${Nc !== null ? Nc.toFixed(0) : '-.--'} RPM</strong></p>
+                <p>${texts.safeUpperRpmLabel || '安全上限回転数 (0.7*Nc)'}: <strong>${safeNc !== null ? safeNc.toFixed(0) : '-.--'} RPM</strong></p>
+                <p>${texts.statusCritSpeedLabel || 'ステータス (危険回転数)'}: <span class="${critStatusClass}">${critStatusText}</span></p>
             `;
+             // Add keys for these new labels to i18n object
+            if (!texts.polarSectionModulusLabel) { // Example of how to add if missing (do for all)
+                i18n.ja.polarSectionModulusLabel = "極断面係数 (Z<sub>p</sub>):"; i18n.en.polarSectionModulusLabel = "Polar Section Modulus (Z<sub>p</sub>):";
+                i18n.ja.allowableTorqueLabel = "許容トルク (T<sub>allow</sub>):"; i18n.en.allowableTorqueLabel = "Allowable Torque (T<sub>allow</sub>):";
+                i18n.ja.torsionSafetyFactorLabel = "ねじり安全率 (S<sub>f</sub>):"; i18n.en.torsionSafetyFactorLabel = "Torsional Safety Factor (S<sub>f</sub>):";
+                i18n.ja.statusTorsionLabel = "ステータス (ねじり強度):"; i18n.en.statusTorsionLabel = "Status (Torsional Strength):";
+                i18n.ja.criticalSpeedLabel = "危険回転数 (N<sub>c</sub>):"; i18n.en.criticalSpeedLabel = "Critical Speed (N<sub>c</sub>):";
+            }
         }
         
         function updateEnergyChart(chartInstance, chartCtx, totalInertia, vehicleParams) {
+            const texts = i18n[currentLang];
             const labels = [];
             const datasets = [];
 
@@ -609,7 +742,7 @@
                     energyData.push(calculateRotationalKineticEnergy(totalInertia, shaftRpm));
                 }
                 datasets.push({
-                    label: `${gear.name} (${gear.value.toFixed(3)})`,
+                    label: `${gear.name.replace('速','').replace('st','').replace('nd','').replace('rd','').replace('th','')} ${texts.gear_label_suffix || '速'} (${gear.value.toFixed(3)})`,
                     data: energyData,
                     borderColor: gear.color,
                     backgroundColor: gear.color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
@@ -623,8 +756,8 @@
             const chartOptions = {
                 responsive: true, maintainAspectRatio: false,
                 scales: {
-                    x: { title: { display: true, text: 'エンジン回転数 (RPM)' } },
-                    y: { title: { display: true, text: '回転運動エネルギー (J)' }, beginAtZero: true }
+                    x: { title: { display: true, text: texts.chart_engine_rpm_axis } },
+                    y: { title: { display: true, text: texts.chart_energy_axis }, beginAtZero: true }
                 },
                 plugins: { legend: { position: 'top', labels: {font: {size: 10}} } }
             };
@@ -663,7 +796,7 @@
                 const safeNc = Nc ? Nc * 0.7 : null;
                 const torsionProps = props.error ? {T_allow: null} : calculateTorsionalStrength(props.Zp);
                 
-                renderShaftResults(opResultsContentDiv, "ワンピースシャフト", props, Nc, safeNc, torsionProps.T_allow, maxShaftRpm, maxShaftTorque, opOverallErrorMessageSpan, props.error);
+                renderShaftResults(opResultsContentDiv, "one_piece_shaft_label", props, Nc, safeNc, torsionProps.T_allow, maxShaftRpm, maxShaftTorque, opOverallErrorMessageSpan, props.error);
                 currentTotalInertiaForChart = props.inertia;
                 onePieceEnergyChart = updateEnergyChart(onePieceEnergyChart, onePieceChartCtx, currentTotalInertiaForChart, currentParams);
                 if (twoPieceEnergyChart) { twoPieceEnergyChart.destroy(); twoPieceEnergyChart = null; }
@@ -683,13 +816,13 @@
                 const Nc1 = props1.error ? null : calculateCriticalSpeed(L1_m, D1_m, t1_m);
                 const safeNc1 = Nc1 ? Nc1 * 0.7 : null;
                 const torsionProps1 = props1.error ? {T_allow: null} : calculateTorsionalStrength(props1.Zp);
-                renderShaftResults(tpS1ResultsContentDiv, "シャフト1", props1, Nc1, safeNc1, torsionProps1.T_allow, maxShaftRpm, maxShaftTorque, tpS1ErrorMessageSpan, props1.error);
+                renderShaftResults(tpS1ResultsContentDiv, "shaft1_label", props1, Nc1, safeNc1, torsionProps1.T_allow, maxShaftRpm, maxShaftTorque, tpS1ErrorMessageSpan, props1.error);
 
                 const props2 = calculateShaftProperties(D2_m, t2_m, L2_m);
                 const Nc2 = props2.error ? null : calculateCriticalSpeed(L2_m, D2_m, t2_m);
                 const safeNc2 = Nc2 ? Nc2 * 0.7 : null;
                 const torsionProps2 = props2.error ? {T_allow: null} : calculateTorsionalStrength(props2.Zp);
-                renderShaftResults(tpS2ResultsContentDiv, "シャフト2", props2, Nc2, safeNc2, torsionProps2.T_allow, maxShaftRpm, maxShaftTorque, tpS2ErrorMessageSpan, props2.error);
+                renderShaftResults(tpS2ResultsContentDiv, "shaft2_label", props2, Nc2, safeNc2, torsionProps2.T_allow, maxShaftRpm, maxShaftTorque, tpS2ErrorMessageSpan, props2.error);
                 
                 let systemNc = null;
                 if (Nc1 !== null && Nc2 !== null) systemNc = Math.min(Nc1, Nc2);
@@ -700,12 +833,13 @@
                 tpSystemCriticalSpeedSpan.textContent = systemNc ? `${systemNc.toFixed(0)} RPM` : '-.--';
                 tpSystemSafeRpmSpan.textContent = systemSafeNc ? `${systemSafeNc.toFixed(0)} RPM` : '-.--';
 
+                const texts = i18n[currentLang];
                 let systemCritStatusClass = '';
-                let systemCritStatusText = '計算不可';
+                let systemCritStatusText = texts.status_error_calc;
                 if (systemNc !== null && systemSafeNc !== null && !isNaN(maxShaftRpm)) {
-                    if (maxShaftRpm <= systemSafeNc) { systemCritStatusText = 'OK (安全域)'; systemCritStatusClass = 'status-ok'; }
-                    else if (maxShaftRpm <= systemNc) { systemCritStatusText = `注意 (安全域超過: ${(maxShaftRpm / systemNc * 100).toFixed(0)}%)`; systemCritStatusClass = 'status-warning'; }
-                    else { systemCritStatusText = '危険 (危険回転数超過)'; systemCritStatusClass = 'status-danger'; }
+                    if (maxShaftRpm <= systemSafeNc) { systemCritStatusText = texts.status_ok; systemCritStatusClass = 'status-ok'; }
+                    else if (maxShaftRpm <= systemNc) { systemCritStatusText = texts.status_warning_zone.replace('{percent}', (maxShaftRpm / systemNc * 100).toFixed(0)); systemCritStatusClass = 'status-warning'; }
+                    else { systemCritStatusText = texts.status_danger_crit; systemCritStatusClass = 'status-danger'; }
                 }
                 tpSystemCritStatusSpan.className = systemCritStatusClass;
                 tpSystemCritStatusSpan.textContent = systemCritStatusText;
@@ -720,7 +854,6 @@
 
         // --- 初期化 ---
         function initializeApp() {
-            // Initialize slider displays
             const sliders = [
                 { id: 'opLength', unit: 'mm' }, { id: 'opDiameter', unit: 'mm' }, { id: 'opThickness', unit: 'mm', fixed: 1 },
                 { id: 'tpTotalLength', unit: 'mm' }, { id: 'tpCbPosition', unit: ' %' },
@@ -740,7 +873,11 @@
             tpL1ValueSpan.textContent = (totalL * cbPos).toFixed(0) + ' mm';
             tpL2ValueSpan.textContent = (totalL * (1 - cbPos)).toFixed(0) + ' mm';
             
-            switchVehicleModel(currentVehicleModelKey); 
+            // Set initial language and texts
+            langJaButton.classList.add('active'); // Default to Japanese
+            langEnButton.classList.remove('active');
+            updateTexts(); // This will also call switchVehicleModel -> updateFixedParamsDisplay -> performCalculations
+            switchVehicleModel(currentVehicleModelKey); // Ensure correct initial model is set and calculated
         }
 
         initializeApp();
