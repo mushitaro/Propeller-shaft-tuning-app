@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロペラシャフト 慣性モーメント & 回転エネルギー計算 (全ギア比)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* カスタムスタイル */
+        body {
+            font-family: 'Inter', sans-serif; /* フォント設定 */
+        }
+        .slider-label {
+            min-width: 100px; /* ラベル幅の最小値を設定 */
+        }
+        .value-display {
+            min-width: 60px; /* 値表示の最小幅 */
+            text-align: right;
+        }
+        /* スライダーのトラックとつまみのスタイル */
+        input[type=range] {
+            -webkit-appearance: none; /* デフォルトのスタイルを無効化 (Chrome, Safari, Edge) */
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #d3d3d3; /* トラックの背景色 */
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s; /* アニメーション */
+            transition: opacity .2s;
+            border-radius: 4px; /* 角丸 */
+        }
+
+        input[type=range]:hover {
+            opacity: 1; /* ホバー時に少し濃くする */
+        }
+
+        /* Chrome, Safari, Edge 用のつまみ */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #0ea5e9; /* つまみの色 (sky-500) */
+            cursor: pointer;
+            border-radius: 50%; /* 円形 */
+        }
+
+        /* Firefox 用のつまみ */
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #0ea5e9; /* つまみの色 (sky-500) */
+            cursor: pointer;
+            border-radius: 50%; /* 円形 */
+            border: none; /* Firefoxのデフォルトボーダーを削除 */
+        }
+        /* 凡例のクリックを無効化するためのスタイル */
+        .legend-item-disabled {
+             pointer-events: none;
+             opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8 font-sans">
+
+    <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">プロペラシャフト 慣性モーメント & 回転運動エネルギー 計算・グラフ (全ギア比)</h1>
+
+        <div class="mb-6">
+             <h2 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">パラメータ設定</h2>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                 <div class="flex items-center space-x-3">
+                     <label for="diameter" class="slider-label text-sm font-medium text-gray-600">配管径 (D):</label>
+                     <input type="range" id="diameter" min="20" max="120" value="60" class="flex-grow">
+                     <span id="diameterValue" class="value-display text-sm font-medium text-sky-600">60 mm</span>
+                 </div>
+
+                 <div class="flex items-center space-x-3">
+                     <label for="length" class="slider-label text-sm font-medium text-gray-600">長さ (L):</label>
+                     <input type="range" id="length" min="500" max="2500" value="1500" step="10" class="flex-grow">
+                     <span id="lengthValue" class="value-display text-sm font-medium text-sky-600">1500 mm</span>
+                 </div>
+
+                 <div class="flex items-center space-x-3">
+                     <label for="thickness" class="slider-label text-sm font-medium text-gray-600">管厚 (t):</label>
+                     <input type="range" id="thickness" min="1" max="10" value="3" step="0.1" class="flex-grow">
+                     <span id="thicknessValue" class="value-display text-sm font-medium text-sky-600">3.0 mm</span>
+                 </div>
+
+                  <div class="flex items-center space-x-3">
+                     <span class="slider-label text-sm font-medium text-gray-600">密度 (ρ):</span>
+                     <span class="text-sm text-gray-700">7850 kg/m³ (鋼の参考値)</span>
+                 </div>
+                 <div class="md:col-span-2 mt-2">
+                      <p class="text-sm font-medium text-gray-600">ギア比 (グラフに表示):</p>
+                      <p class="text-xs text-gray-500">
+                          1st: 4.055, 2nd: 2.369, 3rd: 1.582, 4th: 1.192, 5th: 1.000, 6th: 0.872
+                      </p>
+                 </div>
+             </div>
+        </div>
+
+
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4 text-center">慣性モーメント & 回転運動エネルギー vs エンジン回転数</h2>
+            <div class="bg-white p-4 rounded-lg shadow-inner" style="height: 450px;"> <canvas id="combinedChart"></canvas>
+            </div>
+        </div>
+
+        <div>
+             <h2 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">計算結果</h2>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div class="bg-sky-50 p-4 rounded-md border border-sky-200">
+                     <p class="text-sm text-gray-600">慣性モーメント (I): <span class="text-xs">(回転しにくさ)</span></p>
+                     <p id="inertiaValueDisplay" class="text-xl font-semibold text-sky-700">-.-- kg·m²</p>
+                     <p id="errorMessage" class="text-xs text-red-600 mt-1"></p>
+                 </div>
+                 <div class="bg-emerald-50 p-4 rounded-md border border-emerald-200">
+                     <p class="text-sm text-gray-600">回転運動エネルギー (E_rot): <span class="text-xs">(回転の勢い・エネルギー)</span></p>
+                     <p id="kineticEnergyValueDisplay" class="text-lg font-semibold text-emerald-700">-.-- J ～ -.-- J</p>
+                     <p class="text-xs text-gray-500 mt-1">5速ギア (1.000:1) での 1000 RPM ～ 8000 RPM の範囲</p>
+                 </div>
+                 <div class="md:col-span-2 bg-yellow-50 p-3 rounded-md border border-yellow-200 mt-4">
+                    <p class="text-xs text-yellow-800">
+                        <strong>注記:</strong><br>
+                        - <strong class="font-semibold">慣性モーメント</strong>は物体の形状と質量で決まる「回転しにくさ」で、RPMやギア比に依存しません。<br>
+                        - <strong class="font-semibold">回転運動エネルギー</strong>は物体が回転することで持つエネルギーで、慣性モーメントと<strong class="font-semibold">回転速度の2乗</strong>に比例します。グラフは各ギア比でのエネルギー変化を示します。
+                    </p>
+                 </div>
+             </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 定数 ---
+        const DENSITY_STEEL = 7850; // kg/m^3
+        const ENGINE_RPM_MIN = 1000;
+        const ENGINE_RPM_MAX = 8000;
+        const RPM_STEP = 500; // グラフの解像度
+        const GEAR_RATIOS = [ // ギア比を定義
+            { name: '1st', value: 4.055, color: 'rgb(239, 68, 68)' },  // red-500
+            { name: '2nd', value: 2.369, color: 'rgb(249, 115, 22)' }, // orange-500
+            { name: '3rd', value: 1.582, color: 'rgb(234, 179, 8)' },  // yellow-500
+            { name: '4th', value: 1.192, color: 'rgb(132, 204, 22)' }, // lime-500
+            { name: '5th', value: 1.000, color: 'rgb(16, 185, 129)' }, // emerald-500 (基準)
+            { name: '6th', value: 0.872, color: 'rgb(59, 130, 246)' }  // blue-500
+        ];
+        const REFERENCE_GEAR_INDEX = 4; // 5th gear (index 4) を基準とする
+
+        // --- DOM要素の取得 ---
+        const diameterSlider = document.getElementById('diameter');
+        const lengthSlider = document.getElementById('length');
+        const thicknessSlider = document.getElementById('thickness');
+        // gearRatioSelect は削除
+
+        const diameterValueSpan = document.getElementById('diameterValue');
+        const lengthValueSpan = document.getElementById('lengthValue');
+        const thicknessValueSpan = document.getElementById('thicknessValue');
+        const inertiaValueDisplay = document.getElementById('inertiaValueDisplay');
+        const kineticEnergyValueDisplay = document.getElementById('kineticEnergyValueDisplay');
+        const errorMessage = document.getElementById('errorMessage');
+
+        const ctx = document.getElementById('combinedChart').getContext('2d');
+
+        // --- Chart.js インスタンス ---
+        let combinedChart = null;
+
+        // --- 計算関数 (変更なし) ---
+        function calculateInertia(diameterMM, lengthMM, thicknessMM) {
+            errorMessage.textContent = '';
+            const D_m = diameterMM / 1000;
+            const L_m = lengthMM / 1000;
+            const t_m = thicknessMM / 1000;
+            const d_m = D_m - 2 * t_m;
+
+            if (d_m <= 0) {
+                errorMessage.textContent = 'エラー: 管厚が大きすぎるため、内径が0以下になります。';
+                return null;
+            }
+            if (D_m <= 0 || L_m <= 0 || t_m <=0) {
+                 errorMessage.textContent = 'エラー: 寸法は正の値である必要があります。';
+                 return null;
+            }
+
+            const R_m = D_m / 2;
+            const r_m = d_m / 2;
+            const mass = DENSITY_STEEL * Math.PI * (Math.pow(R_m, 2) - Math.pow(r_m, 2)) * L_m;
+            const inertia = 0.5 * mass * (Math.pow(R_m, 2) + Math.pow(r_m, 2));
+            return inertia;
+        }
+
+        function calculateRotationalKineticEnergy(inertia, engineRpm, gearRatio) {
+            if (inertia === null || inertia <= 0 || gearRatio <= 0) {
+                return NaN; // 計算不可の場合は NaN を返す
+            }
+            const shaftRpm = engineRpm / gearRatio;
+            const omega = shaftRpm * (2 * Math.PI) / 60;
+            const kineticEnergy = 0.5 * inertia * Math.pow(omega, 2);
+            return kineticEnergy;
+        }
+
+
+        // --- グラフ更新関数 (変更あり) ---
+        function updateChart() {
+            // パラメータ取得
+            const diameter = parseFloat(diameterSlider.value);
+            const length = parseFloat(lengthSlider.value);
+            const thickness = parseFloat(thicknessSlider.value);
+
+            // スパン更新
+            diameterValueSpan.textContent = `${diameter} mm`;
+            lengthValueSpan.textContent = `${length} mm`;
+            thicknessValueSpan.textContent = `${thickness.toFixed(1)} mm`;
+
+            // 慣性モーメント計算 & 表示
+            const inertia = calculateInertia(diameter, length, thickness);
+            if (inertia !== null) {
+                inertiaValueDisplay.textContent = `${inertia.toFixed(4)} kg·m²`;
+            } else {
+                inertiaValueDisplay.textContent = `計算不可`;
+                kineticEnergyValueDisplay.textContent = `計算不可`; // エネルギーも計算不可
+            }
+
+            // --- グラフデータ生成 ---
+            const labels = [];
+            const inertiaData = [];
+            const kineticEnergyDatasets = GEAR_RATIOS.map(gear => ({
+                label: `エネルギー (${gear.name})`,
+                data: [],
+                borderColor: gear.color,
+                backgroundColor: gear.color.replace('rgb', 'rgba').replace(')', ', 0.1)'), // 透明度追加
+                borderWidth: 2,
+                pointRadius: 0, // 点を非表示にして線を強調
+                pointHoverRadius: 4, // ホバー時は表示
+                yAxisID: 'yEnergy',
+                tension: 0.1,
+            }));
+
+            let minEnergyRef = NaN; // 基準ギアの最小エネルギー
+            let maxEnergyRef = NaN; // 基準ギアの最大エネルギー
+
+            if (inertia !== null) {
+                for (let rpm = ENGINE_RPM_MIN; rpm <= ENGINE_RPM_MAX; rpm += RPM_STEP) {
+                    labels.push(`${rpm} RPM`);
+                    inertiaData.push(inertia); // 慣性モーメントはRPMによらず一定
+
+                    // 各ギア比についてエネルギーを計算し、対応するデータセットに追加
+                    GEAR_RATIOS.forEach((gear, index) => {
+                        const energy = calculateRotationalKineticEnergy(inertia, rpm, gear.value);
+                        kineticEnergyDatasets[index].data.push(energy);
+
+                        // 基準ギア (5th) のエネルギー範囲を記録
+                        if (index === REFERENCE_GEAR_INDEX) {
+                            if (rpm === ENGINE_RPM_MIN) minEnergyRef = energy;
+                            if (rpm === ENGINE_RPM_MAX) maxEnergyRef = energy;
+                        }
+                    });
+                }
+                 // 基準ギアのエネルギー範囲を表示
+                 if (!isNaN(minEnergyRef) && !isNaN(maxEnergyRef)) {
+                    kineticEnergyValueDisplay.textContent = `${minEnergyRef.toFixed(2)} J ～ ${maxEnergyRef.toFixed(2)} J`;
+                 } else {
+                     kineticEnergyValueDisplay.textContent = `計算不可`;
+                 }
+
+            } else {
+                 // 慣性モーメントが計算できない場合
+                 for (let rpm = ENGINE_RPM_MIN; rpm <= ENGINE_RPM_MAX; rpm += RPM_STEP) {
+                     labels.push(`${rpm} RPM`);
+                     inertiaData.push(NaN);
+                     GEAR_RATIOS.forEach((gear, index) => {
+                         kineticEnergyDatasets[index].data.push(NaN);
+                     });
+                 }
+                 kineticEnergyValueDisplay.textContent = `計算不可`;
+            }
+
+            // --- Chart.js グラフ設定 ---
+             const chartData = {
+                labels: labels,
+                datasets: [
+                    { // 慣性モーメントのデータセット (変更なし、ただし色は調整)
+                        label: '慣性モーメント (I)',
+                        data: inertiaData,
+                        borderColor: 'rgb(108, 117, 125)', // gray-500
+                        backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        yAxisID: 'yInertia',
+                        tension: 0.1,
+                    },
+                     ...kineticEnergyDatasets // エネルギーのデータセットを展開して追加
+                ]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'エンジン回転数 (Engine RPM)',
+                            font: { size: 14 }
+                        }
+                    },
+                    yInertia: { // 慣性モーメント軸 (左)
+                        type: 'linear',
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '慣性モーメント (kg·m²)',
+                            color: 'rgb(108, 117, 125)', // gray-500
+                            font: { size: 14 }
+                        },
+                        beginAtZero: true,
+                        ticks: {
+                             color: 'rgb(108, 117, 125)',
+                             callback: function(value, index, values) {
+                                 if (value === 0) return '0';
+                                 return Math.abs(value) < 0.0001 && value !== 0 ? value.toExponential(2) : value.toFixed(4);
+                             }
+                        }
+                    },
+                    yEnergy: { // 回転運動エネルギー軸 (右)
+                        type: 'linear',
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '回転運動エネルギー (J)',
+                            color: 'rgb(5, 150, 105)', // emerald-600 (代表色)
+                            font: { size: 14 }
+                        },
+                        beginAtZero: true,
+                        ticks: {
+                             color: 'rgb(5, 150, 105)',
+                             callback: function(value, index, values) {
+                                 return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+                             }
+                        },
+                        grid: {
+                            drawOnChartArea: false, // 左軸のグリッドのみ表示
+                        },
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    // 'エネルギー (Xth)' から '(Xth)' を削除
+                                    label = label.replace(/^エネルギー \((.*?)\)/, '$1');
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null && !isNaN(context.parsed.y)) {
+                                    if (context.dataset.yAxisID === 'yInertia') {
+                                         label += context.parsed.y.toExponential(3) + ' kg·m²';
+                                    } else if (context.dataset.yAxisID === 'yEnergy') {
+                                         label += context.parsed.y.toFixed(2) + ' J';
+                                    } else {
+                                         label += context.parsed.y;
+                                    }
+                                } else {
+                                    label += 'N/A'; // 計算不可の場合
+                                }
+                                return label;
+                            },
+                             title: function(tooltipItems) {
+                                // ツールチップのタイトルに慣性モーメントも表示（オプション）
+                                const inertiaValue = combinedChart.data.datasets[0].data[tooltipItems[0].dataIndex];
+                                let title = tooltipItems[0].label; // RPM
+                                if (inertiaValue !== null && !isNaN(inertiaValue)) {
+                                     title += ` (I: ${inertiaValue.toExponential(3)} kg·m²)`;
+                                }
+                                return title;
+                             }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom', // 凡例を下に移動してスペース確保
+                        labels: {
+                             font: { size: 10 }, // 凡例のフォントサイズを少し小さく
+                             // 慣性モーメントの凡例はクリックで非表示にできないようにする (オプション)
+                             // filter: function(legendItem, chartData) {
+                             //    return legendItem.datasetIndex !== 0; // インデックス0（慣性モーメント）を除外
+                             //}
+                        }
+                    }
+                },
+                spanGaps: true,
+            };
+
+
+            if (combinedChart) {
+                combinedChart.data = chartData;
+                combinedChart.options = chartOptions;
+                combinedChart.update();
+            } else {
+                combinedChart = new Chart(ctx, {
+                    type: 'line',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+
+        // --- イベントリスナーの設定 ---
+        diameterSlider.addEventListener('input', updateChart);
+        lengthSlider.addEventListener('input', updateChart);
+        thicknessSlider.addEventListener('input', updateChart);
+        // gearRatioSelect のリスナーは削除
+
+        // --- 初期表示 ---
+        window.onload = updateChart;
+
+    </script>
+
+</body>
+</html>
