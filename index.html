@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プロペラシャフト総合解析 Ver.3</title>
+    <title>プロペラシャフト総合解析 Ver.3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -89,7 +89,7 @@
         /* Tab styling */
         .tab-button {
             padding: 0.5rem 1rem;
-            margin-right: 0.5rem;
+            margin-right: 0.25rem; /* Slightly reduced margin for more tabs */
             border-radius: 0.375rem 0.375rem 0 0;
             cursor: pointer;
             background-color: #e5e7eb; /* bg-gray-200 */
@@ -97,6 +97,7 @@
             font-weight: 500; /* font-medium */
             border: 1px solid #d1d5db; /* border-gray-300 */
             border-bottom: none;
+            font-size: 0.875rem; /* text-sm for tabs */
         }
         .tab-button.active {
             background-color: white;
@@ -111,13 +112,17 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-5xl mx-auto">
-        <h1 class="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">プロペラシャフト総合解析 Ver.3</h1>
+        <h1 class="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">プロペラシャフト総合解析 Ver.3.1</h1>
 
-        <div class="mb-0 -mb-px"> <button id="tabE92M3" class="tab-button active" data-vehicle="E92M3">E92 M3</button>
-            <button id="tabR32GTR" class="tab-button" data-vehicle="R32GTR">R32 GTR</button>
+        <div class="mb-0 -mb-px flex flex-wrap">
+            <button id="tabE46M3" class="tab-button" data-vehicle="E46M3">E46 M3</button>
+            <button id="tabE92M3" class="tab-button" data-vehicle="E92M3">E92 M3</button>
+            <button id="tabR32GTR" class="tab-button" data-vehicle="R32GTR">R32 GT-R</button>
+            <button id="tabR33GTR" class="tab-button" data-vehicle="R33GTR">R33 GT-R</button>
+            <button id="tabR34GTR" class="tab-button" data-vehicle="R34GTR">R34 GT-R</button>
         </div>
 
-        <div class="param-group" style="border-top-left-radius: 0;"> <h2 class="section-title">基本設定 (車両固定値)</h2>
+        <div class="param-group" style="border-top-left-radius: 0; border-top-right-radius: 0;"> <h2 class="section-title">基本設定 (車両固定値)</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                 <p class="text-sm text-gray-700">最大エンジン回転数: <span id="fixedMaxEngineRpm" class="fixed-value"></span></p>
                 <p class="text-sm text-gray-700">最速ギア比: <span id="fixedFastestGearRatio" class="fixed-value"></span></p>
@@ -275,11 +280,27 @@
 
         // Vehicle Specific Parameters
         const VEHICLE_PARAMS = {
+            E46M3: {
+                name: "E46 M3",
+                maxEngineRpm: 8000,
+                fastestGearRatio: 0.828,
+                maxEngineTorque: 365,
+                firstGearRatio: 4.227,
+                graphGearRatios: [
+                    { name: '1速', value: 4.227, color: 'rgb(239, 68, 68)' },
+                    { name: '2速', value: 2.528, color: 'rgb(249, 115, 22)' },
+                    { name: '3速', value: 1.669, color: 'rgb(234, 179, 8)' },
+                    { name: '4速', value: 1.226, color: 'rgb(132, 204, 22)' },
+                    { name: '5速', value: 1.000, color: 'rgb(16, 185, 129)' },
+                    { name: '6速', value: 0.828, color: 'rgb(59, 130, 246)' }
+                ],
+                note: "E46 M3の数値は一般的な6MTモデルに基づきます。"
+            },
             E92M3: {
                 name: "E92 M3",
-                maxEngineRpm: 8000,
+                maxEngineRpm: 8300, // Updated
                 fastestGearRatio: 0.872,
-                maxEngineTorque: 350,
+                maxEngineTorque: 400, // Updated
                 firstGearRatio: 4.055,
                 graphGearRatios: [
                     { name: '1速', value: 4.055, color: 'rgb(239, 68, 68)' },
@@ -292,10 +313,10 @@
                 note: ""
             },
             R32GTR: {
-                name: "R32 GTR",
-                maxEngineRpm: 7400, // Updated value
+                name: "R32 GT-R",
+                maxEngineRpm: 8000,
                 fastestGearRatio: 0.752,
-                maxEngineTorque: 350, // 仮の値 (標準は約353Nm)
+                maxEngineTorque: 353, // Updated
                 firstGearRatio: 3.214,
                 graphGearRatios: [
                     { name: '1速', value: 3.214, color: 'rgb(239, 68, 68)' },
@@ -304,14 +325,50 @@
                     { name: '4速', value: 1.000, color: 'rgb(132, 204, 22)' },
                     { name: '5速', value: 0.752, color: 'rgb(16, 185, 129)' }
                 ],
-                note: "R32 GTRの最大トルクは仮の値です。実際の車両に合わせて調整してください。" // Updated note
+                note: "R32 GT-Rの最大エンジン回転数・トルクは一般的な値を参照しています。"
+            },
+            R33GTR: {
+                name: "R33 GT-R",
+                maxEngineRpm: 8000, // Official, can be higher
+                fastestGearRatio: 0.752, // Assuming same 5-speed as R32
+                maxEngineTorque: 368,
+                firstGearRatio: 3.214, // Assuming same 5-speed as R32
+                graphGearRatios: [
+                    { name: '1速', value: 3.214, color: 'rgb(239, 68, 68)' },
+                    { name: '2速', value: 1.925, color: 'rgb(249, 115, 22)' },
+                    { name: '3速', value: 1.302, color: 'rgb(234, 179, 8)' },
+                    { name: '4速', value: 1.000, color: 'rgb(132, 204, 22)' },
+                    { name: '5速', value: 0.752, color: 'rgb(16, 185, 129)' }
+                ],
+                note: "R33 GT-Rの最大エンジン回転数・トルクは標準的な値を参照。5MTを想定。"
+            },
+            R34GTR: {
+                name: "R34 GT-R",
+                maxEngineRpm: 8000, // Common enthusiast redline, official is lower
+                fastestGearRatio: 0.793,
+                maxEngineTorque: 392,
+                firstGearRatio: 3.827,
+                graphGearRatios: [
+                    { name: '1速', value: 3.827, color: 'rgb(239, 68, 68)' },
+                    { name: '2速', value: 2.360, color: 'rgb(249, 115, 22)' },
+                    { name: '3速', value: 1.685, color: 'rgb(234, 179, 8)' },
+                    { name: '4速', value: 1.312, color: 'rgb(132, 204, 22)' },
+                    { name: '5速', value: 1.000, color: 'rgb(16, 185, 129)' },
+                    { name: '6速', value: 0.793, color: 'rgb(59, 130, 246)' }
+                ],
+                note: "R34 GT-Rの最大エンジン回転数は一般的なチューニング値を参照。トルクは標準的な値。"
             }
         };
-        let currentVehicleModelKey = 'E92M3'; // Default vehicle
+        let currentVehicleModelKey = 'E46M3'; // Default vehicle (first in new order)
 
         // --- DOM 要素 ---
-        const tabE92M3 = document.getElementById('tabE92M3');
-        const tabR32GTR = document.getElementById('tabR32GTR');
+        const tabButtons = { // Store tab buttons for easier access
+            E46M3: document.getElementById('tabE46M3'),
+            E92M3: document.getElementById('tabE92M3'),
+            R32GTR: document.getElementById('tabR32GTR'),
+            R33GTR: document.getElementById('tabR33GTR'),
+            R34GTR: document.getElementById('tabR34GTR')
+        };
         const vehicleNoteSpan = document.getElementById('vehicleNote');
         const additionalVehicleNoteSpan = document.getElementById('additionalVehicleNote');
 
@@ -377,8 +434,11 @@
         const twoPieceChartCtx = document.getElementById('twoPieceEnergyChart').getContext('2d');
 
         // --- イベントリスナー ---
-        tabE92M3.addEventListener('click', () => switchVehicleModel('E92M3'));
-        tabR32GTR.addEventListener('click', () => switchVehicleModel('R32GTR'));
+        Object.keys(tabButtons).forEach(key => {
+            if (tabButtons[key]) { // Check if tab button exists
+                tabButtons[key].addEventListener('click', () => switchVehicleModel(key));
+            }
+        });
 
         shaftTypeRadios.forEach(radio => radio.addEventListener('change', updateUI));
         [ opLengthSlider, opDiameterSlider, opThicknessSlider,
@@ -388,8 +448,11 @@
         // --- 車両モデル切り替え ---
         function switchVehicleModel(modelKey) {
             currentVehicleModelKey = modelKey;
-            tabE92M3.classList.toggle('active', modelKey === 'E92M3');
-            tabR32GTR.classList.toggle('active', modelKey === 'R32GTR');
+            Object.keys(tabButtons).forEach(key => {
+                if (tabButtons[key]) {
+                    tabButtons[key].classList.toggle('active', key === modelKey);
+                }
+            });
             updateFixedParamsDisplay();
             performCalculations();
         }
@@ -401,7 +464,7 @@
             fixedMaxEngineTorqueSpan.textContent = `${params.maxEngineTorque} Nm`;
             fixedFirstGearRatioSpan.textContent = params.firstGearRatio.toFixed(3);
             vehicleNoteSpan.textContent = params.note || "";
-            additionalVehicleNoteSpan.textContent = params.note || ""; // Update the note in the yellow box as well
+            additionalVehicleNoteSpan.textContent = params.note || ""; 
         }
 
 
@@ -531,8 +594,8 @@
             const datasets = [];
 
             if (totalInertia === null || totalInertia <= 0) {
-                if (chartInstance) chartInstance.destroy(); // Destroy the old chart instance
-                return null; // Return null as no chart is (re)created
+                if (chartInstance) chartInstance.destroy(); 
+                return null; 
             }
 
             for (let engRpm = ENGINE_RPM_MIN_FOR_GRAPH; engRpm <= vehicleParams.maxEngineRpm; engRpm += RPM_STEP_FOR_GRAPH) {
@@ -685,4 +748,3 @@
     </script>
 </body>
 </html>
-
